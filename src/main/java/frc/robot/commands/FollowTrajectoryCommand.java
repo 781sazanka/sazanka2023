@@ -86,45 +86,4 @@ public class FollowTrajectoryCommand extends RamseteCommand {
         //set the motor output to zero if interrupted
         super.end(interrupted);
     }
-
-    // public class PositionedCommand<C extends Command> {
-    //     private final C command;
-    //     private final Pose2d start;
-    //     private final Pose2d end;
-    //     private final double tolerance;
-    //     private boolean running = false;
-
-    //     public PositionedCommand(C command, Pose2d start, Pose2d end, double tolerance) {
-    //         this.command = command;
-    //         this.start = start;
-    //         this.end = end;
-    //         this.tolerance = tolerance;
-    //     }
-
-    //     public PositionedCommand(C command, Pose2d start, Pose2d end) {
-    //         this(command, start, end, 0.0);
-    //     }
-
-    //     public void executeAt(Pose2d pose) {
-    //         if (transformLength(start.minus(pose)) < tolerance) {
-    //             running = true;
-    //             command.initialize();
-    //         }
-
-    //         if (transformLength(end.minus(pose)) < tolerance) {
-    //             running = false;
-    //             command.end(true);
-    //         }
-
-    //         if (running) {
-    //             command.execute();
-    //         }
-    //     }
-
-    //     double transformLength(Transform2d transform) {
-    //         return Math.sqrt(
-    //                 Math.pow(transform.getTranslation().getX(), 2)
-    //                         + Math.pow(transform.getTranslation().getY(), 2));
-    //     }
-    // }
 }

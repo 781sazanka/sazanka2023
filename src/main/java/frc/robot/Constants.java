@@ -17,7 +17,8 @@ import edu.wpi.first.math.util.Units;
  */
 public final class Constants {
   public static class OperatorConstants {
-    public static final int kDriverControllerPort = 0;
+    public static final int DriverControllerPort = 0;
+    public static final int MechanicsControllerPort = 1;
   }
 
   public static final class Drivetrain {
@@ -28,7 +29,7 @@ public final class Constants {
 
     public static final double SENSOR_UNITS_PER_REV = 2048;
     public static final double WHEEL_DIAMETER = Units.inchesToMeters(6);
-    public static final double GEAR_RATIO = 10.71;
+    public static final double GEAR_RATIO = 12.75;
     public static final double WHEEL_CIRCUMFERENCE = Math.PI * WHEEL_DIAMETER;
     public static final double SENSOR_UNITS_PER_METER =
             (SENSOR_UNITS_PER_REV * GEAR_RATIO) / WHEEL_CIRCUMFERENCE;
@@ -42,6 +43,63 @@ public final class Constants {
     public static final double FEED_FORWARD_KS = 0.14537;
     public static final double FEED_FORWARD_KV = 2.2311;
     public static final double FEED_FORWARD_KA = 0.52691;
+  }
+
+  public static final class LiftConstants {
+    public static final int RightMotorID = 4;
+    public static final int LeftMotorID = 5;
+
+    public static final double kP = 1;
+    public static final double kI = 0;
+    public static final double kD = 0;
+
+    // These are fake gains; in actuality these must be determined individually for each robot
+    public static final double kSVolts = 1;
+    public static final double kGVolts = 1;
+    public static final double kVVoltSecondPerRad = 0.5;
+    public static final double kAVoltSecondSquaredPerRad = 0.1;
+
+    public static final double kMaxVelocityRadPerSecond = 3;
+    public static final double kMaxAccelerationRadPerSecSquared = 10;
+
+    public static final int EncoderPPR = 256;
+    public static final int LiftGearRatio = 16;
+    public static final double kEncoderDistancePerPulse = 2.0 * Math.PI / (double)(EncoderPPR*LiftGearRatio);
+
+    // The offset of the arm from the horizontal in its neutral position,
+    // measured from the horizontal
+    public static final double ArmOffsetRads = 0.0;
+    public static final double ArmLiftGoalPositionRad = 2.0; //radian
+  }
+
+  public static final class ArmRotationConstants {
+    //TODO: change this ID
+    public static final int ID = 6;
+
+    public static final double kP = 1;
+    public static final double kI = 0;
+    public static final double kD = 0;
+
+    // These are fake gains; in actuality these must be determined individually for each robot
+    public static final double kSVolts = 1;
+    public static final double kGVolts = 1;
+    public static final double kVVoltSecondPerRad = 0.5;
+    public static final double kAVoltSecondSquaredPerRad = 0.1;
+
+    public static final double kMaxVelocityRadPerSecond = 3;
+    public static final double kMaxAccelerationRadPerSecSquared = 10;
+
+    public static final int[] kEncoderPorts = new int[] {4, 5};
+    public static final boolean kEncoderReversed = false;
+    public static final int kEncoderPPR = 256;
+    public static final int ArmGearRatio = 16;
+    public static final double kEncoderDistancePerPulse = 2.0 * Math.PI / (double)(kEncoderPPR*ArmGearRatio);
+
+    // The offset of the arm from the horizontal in its neutral position,
+    // measured from the horizontal in [radian]
+    public static final double ArmOffsetRads = 0.0;
+    public static final double ArmVertPosRads = 2.0;
+    public static final double ArmTargetRads = 3.0;
   }
 
   public static final class AutoConstants {

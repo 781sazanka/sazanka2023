@@ -14,6 +14,12 @@ public class DriveConfig {
         PRESETS.put("koken", new DriveConfig(1, 2.9));
         PRESETS.put("person_2", new DriveConfig(0.7, 2));
     }
+
+    public DriveConfig(double speedSensitivity, double turnSensitivity) {
+        this.speedSensitivity = speedSensitivity;
+        this.turnSensitivity = turnSensitivity;
+    }
+
     //get the specific DriveConfig values from the key value "string"
     public static DriveConfig getPreset(String string) {
         return PRESETS.get(string);
@@ -21,17 +27,8 @@ public class DriveConfig {
 
     //get the information of the current driver
     public static DriveConfig getCurrent() {
-        // may be bad to get shuffleboard values constantly
-
-        // decommentout this sentense if you want to have options who drive the robot
-        
-        // return PRESETS.getOrDefault(RobotContainer.drivePresetsChooser.getSelected(), PRESETS.get("koken"));
-        return PRESETS.get("koken");
-    }
-
-    public DriveConfig(double speedSensitivity, double turnSensitivity) {
-        this.speedSensitivity = speedSensitivity;
-        this.turnSensitivity = turnSensitivity;
+        // may be bad to get shuffleboard values constantly        
+        return PRESETS.getOrDefault(RobotContainer.drivePresetsChooser.getSelected(), PRESETS.get("koken"));
     }
 
     public double getSpeedSensitivity() {

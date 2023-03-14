@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.kauailabs.navx.frc.AHRS;
@@ -12,25 +11,22 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.Drivetrain;
-import frc.robot.RobotContainer;
-import edu.wpi.first.wpilibj.MotorSafety;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 public class DriveTrain extends SubsystemBase {
-  private final WPI_TalonFX leftMotor1, leftMotor2, rightMotor1, rightMotor2;
+  private final WPI_TalonFX leftMotor1 = new WPI_TalonFX(Drivetrain.MOTOR_LEFT_1);
+  private final WPI_TalonFX leftMotor2 = new WPI_TalonFX(Drivetrain.MOTOR_LEFT_2);
+  private final WPI_TalonFX rightMotor1 = new WPI_TalonFX(Drivetrain.MOTOR_RIGHT_1);
+  private final WPI_TalonFX rightMotor2 = new WPI_TalonFX(Drivetrain.MOTOR_RIGHT_2);
 
+  private final DifferentialDrive m_drive = new DifferentialDrive(leftMotor1,rightMotor1);
   private final DifferentialDriveOdometry odometry = new DifferentialDriveOdometry(new Rotation2d(),0,0,new Pose2d());
   private final AHRS navX = new AHRS();
 
   public DriveTrain() {
-    leftMotor1 = new WPI_TalonFX(Drivetrain.MOTOR_LEFT_1);
-    leftMotor2 = new WPI_TalonFX(Drivetrain.MOTOR_LEFT_2);
-    rightMotor1 = new WPI_TalonFX(Drivetrain.MOTOR_RIGHT_1);
-    rightMotor2 = new WPI_TalonFX(Drivetrain.MOTOR_RIGHT_2);
-
+    
     leftMotor2.follow(leftMotor1);
     rightMotor2.follow(rightMotor1);
 
@@ -58,12 +54,6 @@ public class DriveTrain extends SubsystemBase {
             / Drivetrain.SENSOR_UNITS_PER_METER,
         rightMotor1.getSelectedSensorPosition()
             / Drivetrain.SENSOR_UNITS_PER_METER);
-        // SmartDashboard.putNumber("leftmotor vel",         
-        // leftMotor1.getSelectedSensorVelocity()
-        // / Drivetrain.SENSOR_UNITS_PER_METER);
-        // SmartDashboard.putNumber("rightmotor vel",
-        // rightMotor1.getSelectedSensorVelocity()
-        //     / Drivetrain.SENSOR_UNITS_PER_METER);
     // @question how to utilize field2D class?? / showing the current pose in
     // dashboards
     // RobotContainer.field.setRobotPose(getPose());
@@ -89,40 +79,52 @@ public class DriveTrain extends SubsystemBase {
 
   public void resetOdometry(Pose2d pose) {
     resetEncoders();
-    odometry.resetPosition(navX.getRotation2d(), 0, 0, pose);
+    odometry.resetPosition(navX.getRotation2d(), 
+      0,
+      0,
+      pose);
   }
 
   public void tankDriveVolts(double left, double right) {
     leftMotor1.setVoltage(left);
     rightMotor1.setVoltage(right);
+    leftMotor1.feed();
+    rightMotor1.feed();
   }
 
   public void stop() {
     // set the output voltage to zero
-    leftMotor1.set(ControlMode.PercentOutput, 0);
-    rightMotor1.set(ControlMode.PercentOutput, 0);
+    // leftMotor1.set(ControlMode.PercentOutput, 0);
+    // rightMotor1.set(ControlMode.PercentOutput, 0);
+    this.tankDriveVolts(0, 0);
   }
-  //@question : why this formula?? how should I tune and utilize these??
-  public void arcadeDrive(double xSpeed, double zRotation) {
-    //copySign(a,b) a:absolute value, b:sign(plus or minus)
-    double turnDiff = Math.copySign(Math.pow(zRotation, 2), zRotation)
-        / ((Math.pow(xSpeed, 2) / 3) + 0.5);
-    double leftMotorOutput = Math.copySign(Math.pow(xSpeed, 2), -xSpeed) + turnDiff;
-    double rightMotorOutput = Math.copySign(Math.pow(xSpeed, 2), -xSpeed) - turnDiff;
 
-    leftMotor1.set(leftMotorOutput);
-    rightMotor1.set(rightMotorOutput);
+  public void arcadeDrive(double fwd, double rot){
+    m_drive.arcadeDrive(fwd, rot);
   }
 
   /**
-   * 
    * @param left  the percent of output of the left motor (-1 to 1)
    * @param right the percent of output of the right motor (-1 to 1)
    */
   public void tankDrive(double left, double right) {
-    leftMotor1.set(ControlMode.PercentOutput, left);
-    rightMotor1.set(ControlMode.PercentOutput, right);
+    m_drive.tankDrive(left, right);
   }
+
+  public void curvatureDrive(double xSpeed, double zRotation, boolean allowTurnInPlace){
+    m_drive.curvatureDrive(xSpeed, zRotation, allowTurnInPlace);
+  }
+
+   // public void arcadeDrive(double xSpeed, double zRotation) {
+  //   //copySign(a,b) a:absolute value, b:sign(plus or minus)
+  //   double turnDiff = Math.copySign(Math.pow(zRotation, 2), zRotation)
+  //       / ((Math.pow(xSpeed, 2) / 3) + 0.5);
+  //   double leftMotorOutput = Math.copySign(Math.pow(xSpeed, 2), -xSpeed) + turnDiff;
+  //   double rightMotorOutput = Math.copySign(Math.pow(xSpeed, 2), -xSpeed) - turnDiff;
+
+  //   leftMotor1.set(leftMotorOutput);
+  //   rightMotor1.set(rightMotorOutput);
+  // }
 
   public void setNeutralMode(NeutralMode mode) {
     leftMotor1.setNeutralMode(mode);
@@ -134,10 +136,9 @@ public class DriveTrain extends SubsystemBase {
   private double getRotation() {
     return -navX.getRotation2d().getDegrees();
   }
-
-  // public double getTraveledDistance(WPI_TalonFX motor_controller){
-  //     return (double)(motor_controller.getSelectedSensorPosition()
-  //                       / Drivetrain.SENSOR_UNITS_PER_METER);
-  // }
-
+  
+  //TODO: find a way to set a voltage constraints during trajectory following
+  public void setMaxOutput(double maxOutput) {
+    m_drive.setMaxOutput(maxOutput);
+  }
 }

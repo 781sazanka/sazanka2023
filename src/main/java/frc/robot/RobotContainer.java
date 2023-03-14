@@ -6,27 +6,29 @@
 package frc.robot;
 
 import frc.robot.Constants.*;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.commands.FollowTrajectoryCommand;
-import frc.robot.subsystems.DriveTrain;
-import frc.robot.subsystems.ExampleSubsystem;
-import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.subsystems.*;
+import frc.robot.commands.*;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
-import com.pathplanner.lib.PathPlannerTrajectory;
 
-import frc.robot.commands.Test_FollowTrajectoryCommand;
-import edu.wpi.first.math.trajectory.constraint.DifferentialDriveVoltageConstraint;
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
@@ -35,24 +37,37 @@ import edu.wpi.first.math.trajectory.constraint.DifferentialDriveVoltageConstrai
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-
+  public static final ShuffleboardTab driveSettings = Shuffleboard.getTab("Drive Settings");
   public static SendableChooser<String> drivePresetsChooser;  //in case to choose who drive
   public static Field2d field = new Field2d();                //in case to view the current place of robot
 
-  public static XboxController controller;
+  // Replace with CommandPS4Controller or CommandJoystick if needed
+  public static final CommandXboxController m_driverController =
+    new CommandXboxController(OperatorConstants.DriverControllerPort);
+  public static final CommandXboxController m_mechanicsController =
+    new CommandXboxController(OperatorConstants.MechanicsControllerPort);
 
   private static final DriveTrain driveTrain = new DriveTrain();
+  private static final LiftSubsystem liftArm = new LiftSubsystem();
+  private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
+
+  private static final ArcadeDriveCommand ARCADE_DRIVE = 
+    new ArcadeDriveCommand(driveTrain);
+  
   private static String pathname;
 
-  // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController m_driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
-  
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
+
+    driveTrain.setDefaultCommand(ARCADE_DRIVE);
+
+    drivePresetsChooser = new SendableChooser<String>();
+    drivePresetsChooser.addOption("Koken", "koken");
+    drivePresetsChooser.addOption("Person_2", "person_2");
+    driveSettings.add("Drive Presets", drivePresetsChooser)
+      .withWidget(BuiltInWidgets.kComboBoxChooser);
   }
 
   /**
@@ -65,13 +80,51 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    // new Trigger(m_exampleSubsystem::exampleCondition)
-    //     .onTrue(new ExampleCommand(m_exampleSubsystem));
+    // move the arm to the position to put cones and cubes when 'A' button is pressed
+    m_mechanicsController
+      .a()
+      .onTrue(
+        Commands.runOnce(() -> {
+          liftArm.setGoal(LiftConstants.ArmLiftGoalPositionRad);
+          liftArm.enable();
+        }, liftArm)
+      );
 
-    // // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // // cancelling on release.
-    // m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
+    // move the arm to neutral position when 'B' button is pressed
+    m_mechanicsController
+      .b()
+      .onTrue(
+        Commands.runOnce(() -> {
+          liftArm.setGoal(LiftConstants.ArmOffsetRads);
+          liftArm.enable();
+        }, liftArm)
+      );
+    
+    m_mechanicsController
+      .x()
+      .onTrue(
+        Commands.run(() -> {
+          liftArm.setLeftMotorVolt(m_mechanicsController.getLeftY(), false);
+        }, liftArm)
+      );
+    
+    m_mechanicsController
+    .y()
+    .onTrue(
+      Commands.run(() -> {
+        rotationArm.setMotorVolt(m_mechanicsController.getRightY(), false);
+      }, rotationArm)
+    );
+
+    // disable the arm controller when Y is pressed
+    m_mechanicsController.y().onTrue(Commands.runOnce(liftArm::disable));
+    
+    // Drive at half speed when the bumper is held
+    m_driverController
+    .rightBumper()
+    .onTrue(Commands.runOnce(() -> driveTrain.setMaxOutput(0.5)))
+    .onFalse(Commands.runOnce(() -> driveTrain.setMaxOutput(1.0)));
+
   }
 
   /**
@@ -82,11 +135,10 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     //TODO: create the autonomous command
     pathname = "test1";
-    SmartDashboard.putString("first", "hello");
-    return new Test_FollowTrajectoryCommand(driveTrain,
+    return new PP_TrajectoryCommand(driveTrain,
       PathPlanner.loadPath(pathname,
         new PathConstraints(AutoConstants.MaxSpeedMetersPerSecond,AutoConstants.MaxAccelerationMetersPerSecondSquared),
-        true),
+        false),
       true);
     // return new SequentialCommandGroup(
     //   new WaitCommand(5),
