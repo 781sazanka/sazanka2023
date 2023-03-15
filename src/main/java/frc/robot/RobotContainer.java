@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -38,22 +39,24 @@ import com.pathplanner.lib.PathPlanner;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   public static final ShuffleboardTab driveSettings = Shuffleboard.getTab("Drive Settings");
-  public static SendableChooser<String> drivePresetsChooser;  //in case to choose who drive
-  public static Field2d field = new Field2d();                //in case to view the current place of robot
+  public static SendableChooser<String> drivePresetsChooser;  // choose who drive
+  public static Field2d field = new Field2d();                // in case to view the current place of robot
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   public static final CommandXboxController m_driverController =
     new CommandXboxController(OperatorConstants.DriverControllerPort);
-  public static final CommandXboxController m_mechanicsController =
-    new CommandXboxController(OperatorConstants.MechanicsControllerPort);
+  public static final CommandPS4Controller m_mechanicsController =
+    new CommandPS4Controller(OperatorConstants.MechanicsControllerPort);
 
   private static final DriveTrain driveTrain = new DriveTrain();
-  private static final LiftSubsystem liftArm = new LiftSubsystem();
+  private static final LiftSubsystem liftArm = new LiftSubsystem(true);
   private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
 
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
-  
+  private static final LiftHoldCommand LIFT_HOLD =
+    new LiftHoldCommand(liftArm);
+
   private static String pathname;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -62,7 +65,9 @@ public class RobotContainer {
     configureBindings();
 
     driveTrain.setDefaultCommand(ARCADE_DRIVE);
+    liftArm.setDefaultCommand(LIFT_HOLD);
 
+    // driver settings
     drivePresetsChooser = new SendableChooser<String>();
     drivePresetsChooser.addOption("Koken", "koken");
     drivePresetsChooser.addOption("Person_2", "person_2");
@@ -82,42 +87,42 @@ public class RobotContainer {
   private void configureBindings() {
     // move the arm to the position to put cones and cubes when 'A' button is pressed
     m_mechanicsController
-      .a()
+      .L1()
       .onTrue(
         Commands.runOnce(() -> {
-          liftArm.setGoal(LiftConstants.ArmLiftGoalPositionRad);
+          liftArm.setGoal(LiftConstants.LiftGoalPositionRad);
           liftArm.enable();
         }, liftArm)
       );
 
     // move the arm to neutral position when 'B' button is pressed
     m_mechanicsController
-      .b()
+      .L2()
       .onTrue(
         Commands.runOnce(() -> {
-          liftArm.setGoal(LiftConstants.ArmOffsetRads);
+          liftArm.setGoal(LiftConstants.LiftOffsetRads);
           liftArm.enable();
         }, liftArm)
       );
     
-    m_mechanicsController
-      .x()
-      .onTrue(
-        Commands.run(() -> {
-          liftArm.setLeftMotorVolt(m_mechanicsController.getLeftY(), false);
-        }, liftArm)
-      );
+    // m_mechanicsController
+    //   .L3()
+    //   .onTrue(
+    //     Commands.run(() -> {
+    //       liftArm.setMotorVolt(m_mechanicsController.getLeftY(), false);
+    //     }, liftArm)
+    //   );
     
-    m_mechanicsController
-    .y()
-    .onTrue(
-      Commands.run(() -> {
-        rotationArm.setMotorVolt(m_mechanicsController.getRightY(), false);
-      }, rotationArm)
-    );
+    // m_mechanicsController
+    // .L3()
+    // .onTrue(
+    //   Commands.run(() -> {
+    //     rotationArm.setMotorVolt(m_mechanicsController.getRightY(), false);
+    //   }, rotationArm)
+    // );
 
-    // disable the arm controller when Y is pressed
-    m_mechanicsController.y().onTrue(Commands.runOnce(liftArm::disable));
+    // // disable the arm controller when Y is pressed
+    // m_mechanicsController.y().onTrue(Commands.runOnce(liftArm::disable));
     
     // Drive at half speed when the bumper is held
     m_driverController
@@ -138,7 +143,7 @@ public class RobotContainer {
     return new PP_TrajectoryCommand(driveTrain,
       PathPlanner.loadPath(pathname,
         new PathConstraints(AutoConstants.MaxSpeedMetersPerSecond,AutoConstants.MaxAccelerationMetersPerSecondSquared),
-        false),
+        true),
       true);
     // return new SequentialCommandGroup(
     //   new WaitCommand(5),

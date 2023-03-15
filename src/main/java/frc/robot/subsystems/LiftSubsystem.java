@@ -24,12 +24,13 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
     CANSparkMaxLowLevel.MotorType.kBrushless);
   private RelativeEncoder encoder = left_motor.getEncoder();
 
+  private double setPointInRads = 0;
+
   private final ArmFeedforward m_feedforward = new ArmFeedforward(
       LiftConstants.kSVolts, LiftConstants.kGVolts,
       LiftConstants.kVVoltSecondPerRad, LiftConstants.kAVoltSecondSquaredPerRad);
 
-  /** Create a new ArmSubsystem. */
-  public LiftSubsystem() {
+  private LiftSubsystem() {
     super(
         new ProfiledPIDController(
             LiftConstants.kP,
@@ -39,26 +40,32 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
                 LiftConstants.kMaxVelocityRadPerSecond,
                 LiftConstants.kMaxAccelerationRadPerSecSquared)),
         0);
+    getController().setTolerance(LiftConstants.Tolerance);
     
     left_motor.restoreFactoryDefaults();
     right_motor.restoreFactoryDefaults();
-
     left_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     left_motor.setSmartCurrentLimit(40);
     right_motor.setSmartCurrentLimit(40);
-    right_motor.follow(left_motor, true);
-    
-    //TODO: changing these settings
-    left_motor.getEncoder().setPositionConversionFactor(Units.rotationsToRadians(1) / 151.2);  
-    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
-    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
 
+    right_motor.follow(left_motor, false);
     left_motor.setInverted(false);
     encoder.setInverted(false);
-
+    
+    //TODO: changing these settings
+    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
+    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
+    resetEncoders();
     // Start arm at rest in neutral position / 初期のポジションを真ん中に設定(not 0)
-    setGoal(LiftConstants.ArmOffsetRads);
+    // setGoal(LiftConstants.ArmOffsetRads);
+  }
+
+  public LiftSubsystem(boolean isInitialize){
+    this();
+    if(isInitialize) {
+      resetPositions();
+    }
   }
 
   @Override
@@ -71,11 +78,11 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
 
   @Override
   public double getMeasurement() {
-    //TODO: make it return a radian value
-    return encoder.getPosition() + LiftConstants.ArmOffsetRads;
+    //TODO: make it return a radian value / figure out the direction
+    return encoder.getPosition() + LiftConstants.LiftOffsetRads;
   }
 
-  public void setLeftMotorVolt(double volt, boolean inverted){
+  public void setMotorVolt(double volt, boolean inverted){
     left_motor.setInverted(inverted);
     left_motor.set(volt);
   }
@@ -85,4 +92,23 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
     right_motor.stopMotor();
   }
 
+  /**
+   * @param radians CW:plus CCW:minus
+   */
+  public void runWithSetPoint(double setPointInRads){
+    setGoal(setPointInRads);
+    this.setPointInRads = setPointInRads;
+  }
+
+  public double getSetPointInRads() {
+    return this.setPointInRads;
+  }
+
+  private void resetEncoders(){
+    encoder.setPosition(0);
+  }
+
+  private void resetPositions() {
+    this.setPointInRads = 0;
+  }
 }

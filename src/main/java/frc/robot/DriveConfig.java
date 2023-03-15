@@ -3,6 +3,9 @@ package frc.robot;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @test finished
+ */
 public class DriveConfig {
     private static final Map<String, DriveConfig> PRESETS = new HashMap<>();
     
@@ -11,8 +14,8 @@ public class DriveConfig {
     
     //set specific status in order to much personal preference
     static {
-        PRESETS.put("koken", new DriveConfig(1, 2.9));
-        PRESETS.put("person_2", new DriveConfig(0.7, 2));
+        PRESETS.put("koken", new DriveConfig(2, 2.9));
+        PRESETS.put("person_2", new DriveConfig(1.5, 2));
     }
 
     public DriveConfig(double speedSensitivity, double turnSensitivity) {

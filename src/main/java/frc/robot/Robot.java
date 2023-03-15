@@ -5,8 +5,11 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.commands.ArcadeDriveCommand;
+import frc.robot.subsystems.DriveTrain;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -16,8 +19,10 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-
   private RobotContainer m_robotContainer;
+  private DriveTrain drive = new DriveTrain();
+  private XboxController controller = new XboxController(0);
+  private ArcadeDriveCommand arcade = new ArcadeDriveCommand(drive);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -76,11 +81,16 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    drive.setDefaultCommand(arcade);
   }
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    // drive.arcadeDrive(controller.getLeftY() /1.5, controller.getRightX()/1.5);
+    // drive.tankDrive(controller.getLeftY() / 1.5, controller.getRightY() / 1.5);
+    // drive.curvatureDrive(controller.getRightY(), controller.getRightX(), true);
+  }
 
   @Override
   public void testInit() {
@@ -90,7 +100,8 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 
   /** This function is called once when the robot is first started up. */
   @Override

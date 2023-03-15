@@ -22,6 +22,8 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
     CANSparkMaxLowLevel.MotorType.kBrushless);
   private RelativeEncoder encoder = motor.getEncoder();
 
+  private double setPointInRads = 0;
+
   private final ArmFeedforward m_feedforward = new ArmFeedforward(
       ArmRotationConstants.kSVolts, ArmRotationConstants.kGVolts,
       ArmRotationConstants.kVVoltSecondPerRad, ArmRotationConstants.kAVoltSecondSquaredPerRad);
@@ -34,25 +36,34 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
             ArmRotationConstants.kI,
             ArmRotationConstants.kD,
             new TrapezoidProfile.Constraints(
-              ArmRotationConstants.kMaxVelocityRadPerSecond,
-              ArmRotationConstants.kMaxAccelerationRadPerSecSquared)),
+              ArmRotationConstants.ArmConversionFactor
+                (ArmRotationConstants.kMaxVelocityRadPerSecond),
+              ArmRotationConstants.ArmConversionFactor
+                (ArmRotationConstants.kMaxAccelerationRadPerSecSquared))),
         0);
+    getController().setTolerance
+      (ArmRotationConstants.ArmConversionFactor(ArmRotationConstants.Tolerance));
     
     motor.restoreFactoryDefaults();
-
     motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     motor.setSmartCurrentLimit(40);
     
-    //TODO: changing these settings
-    motor.getEncoder().setPositionConversionFactor(Units.rotationsToRadians(1) / 151.2);  
+    motor.setInverted(false);
+    encoder.setInverted(false);
+
+    //TODO: setting the conversion factor [radians to radians]
     encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * ArmRotationConstants.ArmGearRatio);
     encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) * ArmRotationConstants.ArmGearRatio);
-
-    motor.setInverted(true);
-    encoder.setInverted(true);
-
+    resetEncoders();
     // Start arm at rest in neutral position / 初期のポジションを真ん中に設定(not 0)
-    setGoal(ArmRotationConstants.ArmOffsetRads);
+    // setGoal(ArmRotationConstants.ArmOffsetRads);
+  }
+
+  public ArmRotationSubsystem(boolean isInitialize) {
+    this();
+    if (isInitialize) {
+      resetPositions();
+    }
   }
 
   @Override
@@ -65,7 +76,7 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
 
   @Override
   public double getMeasurement() {
-    //TODO: make it return a radian value
+    //TODO: make it return a radian value / figure out the direction
     return encoder.getPosition() + ArmRotationConstants.ArmOffsetRads;
   }
 
@@ -76,5 +87,22 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
 
   public void stop(){
     motor.stopMotor();
+  }
+
+  public void runWithSetPoint(double setPointInRads){
+    setGoal(ArmRotationConstants.ArmConversionFactor(setPointInRads));
+    this.setPointInRads = setPointInRads;
+  }
+
+  public double getSetPointInRads() {
+    return this.setPointInRads;
+  }
+
+  private void resetEncoders(){
+    encoder.setPosition(0);
+  }
+
+  private void resetPositions() {
+    this.setPointInRads = 0;
   }
 }

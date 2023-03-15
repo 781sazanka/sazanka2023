@@ -39,7 +39,7 @@ public class DriveTrain extends SubsystemBase {
     // leftMotor1.enableVoltageCompensation(true);
     // leftMotor2.enableVoltageCompensation(true);
 
-    setNeutralMode(NeutralMode.Coast);
+    setNeutralMode(NeutralMode.Brake);
 
     resetEncoders();
     resetOdometry(new Pose2d(0, 0, new Rotation2d(0)));
