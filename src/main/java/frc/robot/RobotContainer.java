@@ -50,13 +50,13 @@ public class RobotContainer {
     new CommandPS4Controller(OperatorConstants.MechanicsControllerPort);
 
   private static final DriveTrain driveTrain = new DriveTrain();
-  // private static final LiftSubsystem liftArm = new LiftSubsystem(true);
-  private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
+  private static final LiftSubsystem liftArm = new LiftSubsystem(true);
+  // private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
 
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
-  // private static final LiftHoldCommand LIFT_HOLD =
-  //   new LiftHoldCommand(liftArm);
+  private static final LiftHoldCommand LIFT_HOLD =
+    new LiftHoldCommand(liftArm);
 
   private static String pathname;
 
@@ -65,7 +65,7 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
 
-    // driveTrain.setDefaultCommand(ARCADE_DRIVE);
+    driveTrain.setDefaultCommand(ARCADE_DRIVE);
     // liftArm.setDefaultCommand(LIFT_HOLD);
 
     // driver settings
@@ -126,13 +126,11 @@ public class RobotContainer {
     // m_mechanicsController.y().onTrue(Commands.runOnce(liftArm::disable));
     
     // Drive at half speed when the bumper is held
-    // m_driverController
-    // .rightBumper()
-    // .onTrue(Commands.runOnce(() -> driveTrain.setMaxOutput(0.5)))
-    // .onFalse(Commands.runOnce(() -> driveTrain.setMaxOutput(1.0)));
-    
-  //   m_driverController.a()
-  //   .onTrue(Commands.runOnce(() -> new LiftMoveCommand(liftArm, 2)));
+    m_driverController
+    .rightBumper()
+    .onTrue(Commands.runOnce(() -> driveTrain.setMaxOutput(0.5)))
+    .onFalse(Commands.runOnce(() -> driveTrain.setMaxOutput(1.0)));
+
   }
 
   /**
