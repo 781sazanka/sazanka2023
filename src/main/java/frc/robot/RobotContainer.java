@@ -39,6 +39,7 @@ import com.pathplanner.lib.PathPlanner;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   public static final ShuffleboardTab driveSettings = Shuffleboard.getTab("Drive Settings");
+  public static final ShuffleboardTab drivetrain = Shuffleboard.getTab("DriveTrain");
   public static SendableChooser<String> drivePresetsChooser;  // choose who drive
   public static Field2d field = new Field2d();                // in case to view the current place of robot
 
@@ -50,7 +51,7 @@ public class RobotContainer {
 
   private static final DriveTrain driveTrain = new DriveTrain();
   private static final LiftSubsystem liftArm = new LiftSubsystem(true);
-  private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
+  // private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
 
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
@@ -65,7 +66,7 @@ public class RobotContainer {
     configureBindings();
 
     driveTrain.setDefaultCommand(ARCADE_DRIVE);
-    liftArm.setDefaultCommand(LIFT_HOLD);
+    // liftArm.setDefaultCommand(LIFT_HOLD);
 
     // driver settings
     drivePresetsChooser = new SendableChooser<String>();
@@ -86,24 +87,24 @@ public class RobotContainer {
    */
   private void configureBindings() {
     // move the arm to the position to put cones and cubes when 'A' button is pressed
-    m_mechanicsController
-      .L1()
-      .onTrue(
-        Commands.runOnce(() -> {
-          liftArm.setGoal(LiftConstants.LiftGoalPositionRad);
-          liftArm.enable();
-        }, liftArm)
-      );
+    // m_mechanicsController
+    //   .L1()
+    //   .onTrue(
+    //     Commands.runOnce(() -> {
+    //       liftArm.setGoal(LiftConstants.LiftGoalPositionRad);
+    //       liftArm.enable();
+    //     }, liftArm)
+    //   );
 
-    // move the arm to neutral position when 'B' button is pressed
-    m_mechanicsController
-      .L2()
-      .onTrue(
-        Commands.runOnce(() -> {
-          liftArm.setGoal(LiftConstants.LiftOffsetRads);
-          liftArm.enable();
-        }, liftArm)
-      );
+    // // move the arm to neutral position when 'B' button is pressed
+    // m_mechanicsController
+    //   .L2()
+    //   .onTrue(
+    //     Commands.runOnce(() -> {
+    //       liftArm.setGoal(LiftConstants.LiftOffsetRads);
+    //       liftArm.enable();
+    //     }, liftArm)
+    //   );
     
     // m_mechanicsController
     //   .L3()
