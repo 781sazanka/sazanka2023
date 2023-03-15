@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.commands.ArcadeDriveCommand;
+import frc.robot.subsystems.ArmRotationSubsystem;
 import frc.robot.subsystems.DriveTrain;
 
 /**
@@ -23,6 +24,7 @@ public class Robot extends TimedRobot {
   private DriveTrain drive = new DriveTrain();
   private XboxController controller = new XboxController(0);
   private ArcadeDriveCommand arcade = new ArcadeDriveCommand(drive);
+  private ArmRotationSubsystem armTest = new ArmRotationSubsystem();
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -101,6 +103,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
+    // armTest.setMotorVolt(controller.getRightY(), false);
   }
 
   /** This function is called once when the robot is first started up. */

@@ -51,7 +51,7 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
 
     right_motor.follow(left_motor, false);
     left_motor.setInverted(false);
-    encoder.setInverted(false);
+    // encoder.setInverted(false);
     
     //TODO: changing these settings
     encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
