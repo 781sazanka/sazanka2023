@@ -147,8 +147,8 @@ public final class Constants {
     public static final double SliderTargetRads = 3.0;
   }
   public static final class AutoConstants {
-    public static final double MaxSpeedMetersPerSecond = 0.5;
-    public static final double MaxAccelerationMetersPerSecondSquared = 0.5;
+    public static final double MaxSpeedMetersPerSecond = 0.8;
+    public static final double MaxAccelerationMetersPerSecondSquared = 0.2;
 
     // Reasonable baseline values for a RAMSETE follower in units of meters and seconds
     public static final double RAMSETE_B = 2;
