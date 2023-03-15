@@ -36,13 +36,10 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
             ArmRotationConstants.kI,
             ArmRotationConstants.kD,
             new TrapezoidProfile.Constraints(
-              ArmRotationConstants.ArmConversionFactor
-                (ArmRotationConstants.kMaxVelocityRadPerSecond),
-              ArmRotationConstants.ArmConversionFactor
-                (ArmRotationConstants.kMaxAccelerationRadPerSecSquared))),
+                ArmRotationConstants.kMaxVelocityRadPerSecond,
+                ArmRotationConstants.kMaxAccelerationRadPerSecSquared)),
         0);
-    getController().setTolerance
-      (ArmRotationConstants.ArmConversionFactor(ArmRotationConstants.Tolerance));
+    getController().setTolerance(ArmRotationConstants.Tolerance);
     
     motor.restoreFactoryDefaults();
     motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
