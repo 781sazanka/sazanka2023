@@ -50,13 +50,13 @@ public class RobotContainer {
     new CommandPS4Controller(OperatorConstants.MechanicsControllerPort);
 
   private static final DriveTrain driveTrain = new DriveTrain();
-  private static final LiftSubsystem liftArm = new LiftSubsystem(true);
+  // private static final LiftSubsystem liftArm = new LiftSubsystem(true);
   // private static final ArmRotationSubsystem rotationArm = new ArmRotationSubsystem();
 
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
-  private static final LiftHoldCommand LIFT_HOLD =
-    new LiftHoldCommand(liftArm);
+  // private static final LiftHoldCommand LIFT_HOLD =
+  //   new LiftHoldCommand(liftArm);
 
   private static String pathname;
 

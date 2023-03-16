@@ -155,4 +155,9 @@ public final class Constants {
     public static final double RAMSETE_ZETA = 0.7;
   }
   
+  public static final class TestConstants {
+    public static final int ArmSliderRightID = 5;
+    public static final int ArmSliderLeftID = 6;
+    public static final int ArmRotationID = 7;
+  }
 }

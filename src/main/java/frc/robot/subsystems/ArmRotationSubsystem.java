@@ -44,9 +44,7 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
     motor.restoreFactoryDefaults();
     motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     motor.setSmartCurrentLimit(40);
-    
     motor.setInverted(false);
-    encoder.setInverted(false);
 
     //TODO: setting the conversion factor [radians to radians]
     encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * ArmRotationConstants.ArmGearRatio);
