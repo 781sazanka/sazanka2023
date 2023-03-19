@@ -75,7 +75,10 @@ public class RobotContainer {
   private void configureBindings() {
     m_driverController
     .a()
-    .onTrue(new InstantCommand(() -> SmartDashboard.putString("a button", "pressed")));
+    .onTrue(new LiftCommand(lift, true));
+    m_driverController
+    .b()
+    .onTrue(new LiftCommand(lift, false));
   }
 
   public Command getAutonomousCommand() {

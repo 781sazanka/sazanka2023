@@ -120,42 +120,27 @@ public class TestClass {
    * @attention it is better to have a feedforward control
    */
   public static class LiftTest {
-    private final CANSparkMax left_motor = new CANSparkMax(LiftConstants.LeftMotorID,
-    CANSparkMaxLowLevel.MotorType.kBrushless);
-    private final CANSparkMax right_motor = new CANSparkMax(LiftConstants.RightMotorID,
-    CANSparkMaxLowLevel.MotorType.kBrushless);
-    private RelativeEncoder encoder = left_motor.getEncoder();
-
+    private final Lift lift = new Lift(true);
+    
     public void init() {
-      left_motor.restoreFactoryDefaults();
-      right_motor.restoreFactoryDefaults();
-      left_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-      right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-  
-      right_motor.follow(left_motor, true);
-      //TODO: figure out whether should invert this
-      left_motor.setInverted(true);
-      //TODO: make sure encoder value will increase as it rotates CCW
-      encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / LiftConstants.LiftGearRatio);
-      encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / LiftConstants.LiftGearRatio);
-      encoder.setPosition(0);
+      lift.setSetPoint(LiftConstants.LiftExtendedPos);
     }
 
     public void move_motor() {
-      if (encoder.getPosition() < 0.3) {
-        left_motor.set(0.3);
-      } else if(encoder.getPosition() < 0.6){
-        left_motor.set(0.15);
-      } else if(encoder.getPosition() < 0.9){
-        left_motor.set(0.10);
+      if (lift.getMeasurement() < 0.3) {
+        lift.setMotorVolt(0.3);
+      } else if(lift.getMeasurement() < 0.6){
+        lift.setMotorVolt(0.15);
+      } else if(lift.getMeasurement() < LiftConstants.LiftExtendedPos-0.3){
+        lift.setMotorVolt(0.1);
       } else {
-        left_motor.set(0.01);
+        lift.stop();
       }
     }
 
     public void getEncoder() {
-      SmartDashboard.putNumber("Lift Encoder Pos[m]", encoder.getPosition());
-      SmartDashboard.putNumber("Lift Encoder Vel[m/s]", encoder.getVelocity());
+      SmartDashboard.putNumber("setPoint", lift.getSetPoint());
+      lift.getConvertedEncoderData();
     }
   }
 
@@ -172,7 +157,7 @@ public class TestClass {
     }
   }
 
-  public static class SimpleSliderTest {
+  public static class SimpleMotorTest {
     private final CANSparkMax motor = new CANSparkMax(6, CANSparkMaxLowLevel.MotorType.kBrushless);
     private RelativeEncoder encoder = motor.getEncoder();
 
@@ -216,7 +201,7 @@ public class TestClass {
       lift.getConvertedEncoderData();
       SmartDashboard.putNumber("getMeasurement [rad]", lift.getMeasurement());
       SmartDashboard.putNumber("getSetPoint", lift.getSetPoint());
-      SmartDashboard.putBoolean("isGoal", lift.isGoal());
+      SmartDashboard.putBoolean("isGoal", lift.isSetPoint());
     }
   }
 
@@ -227,7 +212,7 @@ public class TestClass {
       lift.resetEncoders();
       lift.resetPositions();
     }
-    
+
     public void excuteUpCommand() {
       SmartDashboard.putData("Lift UP Command", new LiftCommand(lift, true));
     }
@@ -239,20 +224,19 @@ public class TestClass {
     }
     public void putData() {
       lift.getConvertedEncoderData();
-      SmartDashboard.putBoolean("isGoal", lift.isGoal());
+      SmartDashboard.putBoolean("isGoal", lift.isSetPoint());
       SmartDashboard.putNumber("getSetPoint", lift.getSetPoint());
       SmartDashboard.putNumber("getMeasurement", lift.getMeasurement());
     }
 
     public static class LiftHoldCommand extends CommandBase {
-      private Lift liftincase;
+      private Lift lift;
       public LiftHoldCommand(Lift lift){
-        this.liftincase = lift;
-        addRequirements(liftincase);
+        addRequirements(lift);
       }
       @Override
       public void initialize() {
-        liftincase.runWithSetPoint(liftincase.getSetPoint());
+        this.lift.runWithSetPoint(this.lift.getSetPoint());
       }
     }
   }

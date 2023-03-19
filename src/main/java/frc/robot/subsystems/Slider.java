@@ -25,10 +25,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * @test 3/17 going to test
  */
 public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
-  private final CANSparkMax left_motor = new CANSparkMax(6,
+  private final CANSparkMax left_motor = new CANSparkMax(SliderConstants.LeftMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
-  // private final CANSparkMax right_motor = new CANSparkMax(SliderConstants.RightMotorID,
-  //   CANSparkMaxLowLevel.MotorType.kBrushless);
+  private final CANSparkMax right_motor = new CANSparkMax(SliderConstants.RightMotorID,
+    CANSparkMaxLowLevel.MotorType.kBrushless);
   private RelativeEncoder encoder = left_motor.getEncoder();
 
   private double setPointInMeters = SliderConstants.SliderShortestInMeters;
@@ -51,13 +51,13 @@ public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
     getController().setTolerance(SliderConstants.Tolerance);
     
     left_motor.restoreFactoryDefaults();
-    // right_motor.restoreFactoryDefaults();
+    right_motor.restoreFactoryDefaults();
     left_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    // right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    // left_motor.setSmartCurrentLimit(40);
-    // right_motor.setSmartCurrentLimit(40);
+    right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    left_motor.setSmartCurrentLimit(40);
+    right_motor.setSmartCurrentLimit(40);
 
-    // right_motor.follow(left_motor, false);
+    right_motor.follow(left_motor, false);
     //TODO: figure out whether should invert this
     left_motor.setInverted(false);
     
@@ -114,16 +114,19 @@ public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
    * the methods below are for radio control and testing
    * make sure to call disable method when use this method to control.
    */
-  public void setMotorVolt(double volt, boolean inverted){
+  public void setMotorVolt(double volt, boolean isLeft){
     disable();
-    left_motor.setInverted(inverted);
-    left_motor.set(volt);
+    if ((encoder.getPosition() <= SliderConstants.SliderLongestInMeters) && (encoder.getPosition() >= SliderConstants.SliderShortestInMeters)) {
+      left_motor.set(volt);
+    } else {
+      stop();
+    }  
   }
 
   public void stop(){
     disable();
     left_motor.stopMotor();
-    // right_motor.stopMotor();
+    right_motor.stopMotor();
   }
   public void getConvertedEncoderData() {
     disable();

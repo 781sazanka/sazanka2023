@@ -107,8 +107,8 @@ public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
     this.setPointInRads = LiftConstants.LiftHorizontalPos;
   }
 
-  public boolean isGoal() {
-    return getController().atGoal();
+  public boolean isSetPoint() {
+    return getController().atSetpoint();
     // return getController().atGoal() || isReachedGoal;
   }
 

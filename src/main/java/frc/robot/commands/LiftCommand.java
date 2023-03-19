@@ -59,7 +59,8 @@ public class LiftCommand extends CommandBase {
   @Override
   public boolean isFinished(){
     // TODO: figure out whether isGoal method will work without disabled mode
-    if (lift.isGoal()) {
+    if (-LiftConstants.Tolerance < (lift.getSetPoint()-lift.getMeasurement()) &&
+    (lift.getSetPoint()-lift.getMeasurement()) < LiftConstants.Tolerance) {
       if (isUp)
         SmartDashboard.putString("Lift State","UP Reached");
       else 
