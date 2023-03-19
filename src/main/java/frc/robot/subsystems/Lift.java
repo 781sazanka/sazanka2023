@@ -2,6 +2,10 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+/*
+ * TODO: make sure the encoder value is CW;plus, CCW:minus
+ * ATTENTION: the encoder value is "0" for extended position,
+ */
 package frc.robot.subsystems;
 
 import frc.robot.Constants.LiftConstants;
@@ -15,22 +19,27 @@ import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-/** A robot arm subsystem that moves with a motion profile. */
-public class LiftSubsystem extends ProfiledPIDSubsystem {
+/**
+ * @review finished
+ * @test 3/17 going to test
+ */
+public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
   private final CANSparkMax left_motor = new CANSparkMax(LiftConstants.LeftMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
   private final CANSparkMax right_motor = new CANSparkMax(LiftConstants.RightMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
   private RelativeEncoder encoder = left_motor.getEncoder();
-
-  private double setPointInRads = 0;
+  
+  private double setPointInRads = LiftConstants.LiftHorizontalPos;
+  private boolean isReachedGoal = false;
 
   private final ArmFeedforward m_feedforward = new ArmFeedforward(
       LiftConstants.kSVolts, LiftConstants.kGVolts,
       LiftConstants.kVVoltSecondPerRad, LiftConstants.kAVoltSecondSquaredPerRad);
 
-  private LiftSubsystem() {
+  private Lift() {
     super(
         new ProfiledPIDController(
             LiftConstants.kP,
@@ -46,49 +55,31 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
     right_motor.restoreFactoryDefaults();
     left_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    left_motor.setSmartCurrentLimit(40);
-    right_motor.setSmartCurrentLimit(40);
 
-    right_motor.follow(left_motor, false);
-    left_motor.setInverted(false);
+    right_motor.follow(left_motor, true);
+    left_motor.setInverted(true);
     
-    //TODO: changing these settings
-    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
-    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) * LiftConstants.LiftGearRatio);
-    resetEncoders();
-    // Start arm at rest in neutral position / 初期のポジションを真ん中に設定(not 0)
-    // setGoal(LiftConstants.ArmOffsetRads);
+    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / LiftConstants.LiftGearRatio);
+    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / LiftConstants.LiftGearRatio);
   }
 
-  public LiftSubsystem(boolean isInitialize){
+  public Lift(boolean isInitialize){
     this();
     if(isInitialize) {
+      resetEncoders();
       resetPositions();
     }
   }
 
   @Override
   public void useOutput(double output, TrapezoidProfile.State setpoint) {
-    // Calculate the feedforward from the sepoint
     double feedforward = m_feedforward.calculate(setpoint.position, setpoint.velocity);
-    // Add the feedforward to the PID output to get the motor output
     left_motor.setVoltage(output + feedforward);
   }
 
   @Override
   public double getMeasurement() {
-    //TODO: make it return a radian value / figure out the direction
-    return encoder.getPosition() + LiftConstants.LiftOffsetRads;
-  }
-
-  public void setMotorVolt(double volt, boolean inverted){
-    left_motor.setInverted(inverted);
-    left_motor.set(volt);
-  }
-
-  public void stop(){
-    left_motor.stopMotor();
-    right_motor.stopMotor();
+    return encoder.getPosition();
   }
 
   /**
@@ -97,17 +88,52 @@ public class LiftSubsystem extends ProfiledPIDSubsystem {
   public void runWithSetPoint(double setPointInRads){
     setGoal(setPointInRads);
     this.setPointInRads = setPointInRads;
+    enable();
   }
 
-  public double getSetPointInRads() {
+  public double getSetPoint() {
     return this.setPointInRads;
   }
 
-  private void resetEncoders(){
-    encoder.setPosition(0);
+  public void setSetPoint(double setPointInRads) {
+    this.setPointInRads = setPointInRads;
   }
 
-  private void resetPositions() {
-    this.setPointInRads = 0;
+  public void resetEncoders(){
+    encoder.setPosition(LiftConstants.LiftHorizontalPos);
+  }
+
+  public void resetPositions() {
+    this.setPointInRads = LiftConstants.LiftHorizontalPos;
+  }
+
+  public boolean isGoal() {
+    return getController().atGoal();
+    // return getController().atGoal() || isReachedGoal;
+  }
+
+  /* 
+   * the methods below are for radio control and testing
+   * make sure to call disable method when use this method to control.
+   */
+  public void setMotorVolt(double volt){
+    disable();
+    if ((encoder.getPosition() <= LiftConstants.LiftExtendedPos) && (encoder.getPosition() >= LiftConstants.LiftHorizontalPos)) {
+      left_motor.set(volt);
+    } else {
+      // this.isReachedGoal = true;
+      stop();
+    }
+  }
+
+  public void stop(){
+    disable();
+    left_motor.stopMotor();
+    right_motor.stopMotor();
+  }
+  public void getConvertedEncoderData() {
+    disable();
+    SmartDashboard.putNumber("ArmRotation Encoder Position [rad]", encoder.getPosition());
+    SmartDashboard.putNumber("ArmRotation Encoder Velocity [rad/s]", encoder.getVelocity());
   }
 }

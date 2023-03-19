@@ -2,6 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+//TODO: make sure to check the direction of encoder / CW:increase CCW:decrease
 package frc.robot.subsystems;
 
 import frc.robot.Constants.ArmRotationConstants;
@@ -11,13 +12,17 @@ import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.RelativeEncoder;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 
-/** A robot arm subsystem that moves with a motion profile. */
-public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
+/**
+ *  @review finished(3/18 9:50)
+ *  @test 3/17 going to test
+ */
+public class ArmRotation extends ProfiledPIDSubsystem implements ProfiledInterface{
   private final CANSparkMax motor = new CANSparkMax(ArmRotationConstants.ID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
   private RelativeEncoder encoder = motor.getEncoder();
@@ -28,8 +33,7 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
       ArmRotationConstants.kSVolts, ArmRotationConstants.kGVolts,
       ArmRotationConstants.kVVoltSecondPerRad, ArmRotationConstants.kAVoltSecondSquaredPerRad);
 
-  /** Create a new ArmSubsystem. */
-  public ArmRotationSubsystem() {
+  private ArmRotation() {
     super(
         new ProfiledPIDController(
             ArmRotationConstants.kP,
@@ -44,60 +48,71 @@ public class ArmRotationSubsystem extends ProfiledPIDSubsystem {
     motor.restoreFactoryDefaults();
     motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     motor.setSmartCurrentLimit(40);
+    //TODO: figure out whether should invert this
     motor.setInverted(false);
-
-    //TODO: setting the conversion factor [radians to radians]
-    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) * ArmRotationConstants.ArmGearRatio);
-    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) * ArmRotationConstants.ArmGearRatio);
-    resetEncoders();
-    // Start arm at rest in neutral position / 初期のポジションを真ん中に設定(not 0)
-    // setGoal(ArmRotationConstants.ArmOffsetRads);
+    //TODO:figure out the direction of encoder / should invert the conversion factor??
+    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / ArmRotationConstants.ArmGearRatio);
+    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / ArmRotationConstants.ArmGearRatio);
   }
 
-  public ArmRotationSubsystem(boolean isInitialize) {
+  public ArmRotation(boolean isInitialize) {
     this();
     if (isInitialize) {
+      resetEncoders();
       resetPositions();
     }
   }
 
   @Override
   public void useOutput(double output, TrapezoidProfile.State setpoint) {
-    // Calculate the feedforward from the sepoint
     double feedforward = m_feedforward.calculate(setpoint.position, setpoint.velocity);
-    // Add the feedforward to the PID output to get the motor output
     motor.setVoltage(output + feedforward);
   }
 
   @Override
   public double getMeasurement() {
-    //TODO: make it return a radian value / figure out the direction
-    return encoder.getPosition() + ArmRotationConstants.ArmOffsetRads;
+    return encoder.getPosition();
   }
 
-  public void setMotorVolt(double volt, boolean inverted){
-    motor.setInverted(inverted);
-    motor.set(volt);
-  }
-
-  public void stop(){
-    motor.stopMotor();
-  }
-
+  // only this method is for controling motor via PID control
   public void runWithSetPoint(double setPointInRads){
-    setGoal(ArmRotationConstants.ArmConversionFactor(setPointInRads));
+    setGoal(setPointInRads);
     this.setPointInRads = setPointInRads;
+    enable();
   }
 
-  public double getSetPointInRads() {
+  public double getSetPoint() {
     return this.setPointInRads;
   }
 
-  private void resetEncoders(){
-    encoder.setPosition(0);
+  public void resetEncoders(){
+    encoder.setPosition(ArmRotationConstants.ArmButtomRads);
   }
 
-  private void resetPositions() {
-    this.setPointInRads = 0;
+  public void resetPositions() {
+    this.setPointInRads = ArmRotationConstants.ArmButtomRads;
+  }
+
+  public boolean isGoal() {
+    return getController().atGoal();
+  }
+
+  /* 
+   * the methods below are for radio control and testing
+   * make sure to call disable method when use this method to control.
+   */
+  public void setMotorVolt(double volt, boolean inverted){
+    disable();
+    motor.setInverted(inverted);
+    motor.set(volt);
+  }
+  public void stop(){
+    disable();
+    motor.stopMotor();
+  }
+  public void getConvertedEncoderData() {
+    disable();
+    SmartDashboard.putNumber("ArmRotation Encoder Position [rad]", encoder.getPosition());
+    SmartDashboard.putNumber("ArmRotation Encoder Velocity [rad/s]", encoder.getVelocity());
   }
 }

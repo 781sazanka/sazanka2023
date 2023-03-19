@@ -12,14 +12,18 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.Drivetrain;
-
+import frc.robot.Constants.DriveConstants;
+import frc.robot.RobotContainer;
+/**
+ * @review once reviewed / however haven't finished
+ */
 public class DriveTrain extends SubsystemBase {
-  private final WPI_TalonFX leftMotor1 = new WPI_TalonFX(Drivetrain.MOTOR_LEFT_1);
-  private final WPI_TalonFX leftMotor2 = new WPI_TalonFX(Drivetrain.MOTOR_LEFT_2);
-  private final WPI_TalonFX rightMotor1 = new WPI_TalonFX(Drivetrain.MOTOR_RIGHT_1);
-  private final WPI_TalonFX rightMotor2 = new WPI_TalonFX(Drivetrain.MOTOR_RIGHT_2);
+  private final WPI_TalonFX leftMotor1 = new WPI_TalonFX(DriveConstants.MOTOR_LEFT_1);
+  private final WPI_TalonFX leftMotor2 = new WPI_TalonFX(DriveConstants.MOTOR_LEFT_2);
+  private final WPI_TalonFX rightMotor1 = new WPI_TalonFX(DriveConstants.MOTOR_RIGHT_1);
+  private final WPI_TalonFX rightMotor2 = new WPI_TalonFX(DriveConstants.MOTOR_RIGHT_2);
 
   private final DifferentialDrive m_drive = new DifferentialDrive(leftMotor1,rightMotor1);
   private final DifferentialDriveOdometry odometry = new DifferentialDriveOdometry(new Rotation2d(),0,0,new Pose2d());
@@ -30,14 +34,14 @@ public class DriveTrain extends SubsystemBase {
     leftMotor2.follow(leftMotor1);
     rightMotor2.follow(rightMotor1);
 
-    rightMotor1.setInverted(false);
-    rightMotor2.setInverted(false);
-    leftMotor1.setInverted(true);
-    leftMotor2.setInverted(true);
-    // rightMotor1.enableVoltageCompensation(true);
-    // rightMotor2.enableVoltageCompensation(true);
-    // leftMotor1.enableVoltageCompensation(true);
-    // leftMotor2.enableVoltageCompensation(true);
+    rightMotor1.setInverted(true);
+    rightMotor2.setInverted(true);
+    leftMotor1.setInverted(false);
+    leftMotor2.setInverted(false);
+    rightMotor1.enableVoltageCompensation(true);
+    rightMotor2.enableVoltageCompensation(true);
+    leftMotor1.enableVoltageCompensation(true);
+    leftMotor2.enableVoltageCompensation(true);
 
     setNeutralMode(NeutralMode.Brake);
 
@@ -49,14 +53,14 @@ public class DriveTrain extends SubsystemBase {
   public void periodic() {
     odometry.update(
         Rotation2d.fromDegrees(getRotation()),
-        // getting the traveled distance by leftmotor and rightmotor
+        // getting the traveled distance in meter
         leftMotor1.getSelectedSensorPosition()
-            / Drivetrain.SENSOR_UNITS_PER_METER,
+            / DriveConstants.SENSOR_UNITS_PER_METER,
         rightMotor1.getSelectedSensorPosition()
-            / Drivetrain.SENSOR_UNITS_PER_METER);
+            / DriveConstants.SENSOR_UNITS_PER_METER);
     // @question how to utilize field2D class?? / showing the current pose in
     // dashboards
-    // RobotContainer.field.setRobotPose(getPose());
+    RobotContainer.field.setRobotPose(getPose());
   }
 
   public Pose2d getPose() {
@@ -66,9 +70,9 @@ public class DriveTrain extends SubsystemBase {
   public DifferentialDriveWheelSpeeds getWheelSpeeds() {
     return new DifferentialDriveWheelSpeeds(
         leftMotor1.getSelectedSensorVelocity()
-            / Drivetrain.SENSOR_UNITS_PER_METER,
+            / DriveConstants.SENSOR_UNITS_PER_METER,
         rightMotor1.getSelectedSensorVelocity()
-            / Drivetrain.SENSOR_UNITS_PER_METER);
+            / DriveConstants.SENSOR_UNITS_PER_METER);
   }
 
   public void resetEncoders() {
@@ -115,17 +119,6 @@ public class DriveTrain extends SubsystemBase {
     m_drive.curvatureDrive(xSpeed, zRotation, allowTurnInPlace);
   }
 
-   // public void arcadeDrive(double xSpeed, double zRotation) {
-  //   //copySign(a,b) a:absolute value, b:sign(plus or minus)
-  //   double turnDiff = Math.copySign(Math.pow(zRotation, 2), zRotation)
-  //       / ((Math.pow(xSpeed, 2) / 3) + 0.5);
-  //   double leftMotorOutput = Math.copySign(Math.pow(xSpeed, 2), -xSpeed) + turnDiff;
-  //   double rightMotorOutput = Math.copySign(Math.pow(xSpeed, 2), -xSpeed) - turnDiff;
-
-  //   leftMotor1.set(leftMotorOutput);
-  //   rightMotor1.set(rightMotorOutput);
-  // }
-
   public void setNeutralMode(NeutralMode mode) {
     leftMotor1.setNeutralMode(mode);
     leftMotor2.setNeutralMode(mode);
@@ -140,5 +133,21 @@ public class DriveTrain extends SubsystemBase {
   //TODO: find a way to set a voltage constraints during trajectory following
   public void setMaxOutput(double maxOutput) {
     m_drive.setMaxOutput(maxOutput);
+  }
+
+  public void displayData() {
+    SmartDashboard.putNumber("Left Velocity [m/s]",
+      leftMotor1.getSelectedSensorVelocity()
+      / DriveConstants.SENSOR_UNITS_PER_METER);
+    SmartDashboard.putNumber("Right Velocity [m/s]",
+      rightMotor1.getSelectedSensorVelocity()
+      / DriveConstants.SENSOR_UNITS_PER_METER);
+    SmartDashboard.putNumber("Left Position[m]",
+      leftMotor1.getSelectedSensorPosition()
+      / DriveConstants.SENSOR_UNITS_PER_METER);
+    SmartDashboard.putNumber("Right Position[m]",
+      rightMotor1.getSelectedSensorPosition()
+      / DriveConstants.SENSOR_UNITS_PER_METER);
+    SmartDashboard.putNumber("Gyro Rotation[rad]", getRotation());
   }
 }
