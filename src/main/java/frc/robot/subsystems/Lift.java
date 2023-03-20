@@ -87,7 +87,7 @@ public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
    */
   public void runWithSetPoint(double setPointInRads){
     setGoal(setPointInRads);
-    this.setPointInRads = setPointInRads;
+    setSetPoint(setPointInRads);
     enable();
   }
 

@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+
 import frc.robot.Constants.ArmCatchConstants;
 
 import com.revrobotics.CANSparkMax;
@@ -15,7 +16,6 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -153,7 +153,7 @@ public class ArmCatch extends ProfiledPIDSubsystem implements ProfiledInterface{
   }
 
   public boolean isGoal() {
-    return getController().atGoal();
+    return getController().atSetpoint();
   }
   // //TODO: check whether the command is correct
   // public void reachFarLimitSwitch() {

@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
@@ -40,11 +42,13 @@ public class RobotContainer {
 
   // subsystems
   private static final DriveTrain driveTrain = new DriveTrain();
-  private static final Lift lift = new Lift(true);
+  // private static final Lift lift = new Lift(true);
   // private static final ArmRotation rotationArm = new ArmRotation(true);
   // private static final ArmCatch armCatchLeft = new ArmCatch(true, true);
   // private static final ArmCatch armCatchRight = new ArmCatch(false, true);
   // private static final Slider slider = new Slider(true);
+  private static final ArmRotation testArm = new ArmRotation(true);
+
   // commands
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
@@ -57,7 +61,7 @@ public class RobotContainer {
     configureBindings();
 
     // default commands settings
-    driveTrain.setDefaultCommand(ARCADE_DRIVE);
+    // driveTrain.setDefaultCommand(ARCADE_DRIVE);
     // liftArm.setDefaultCommand(HOLD);
     // rotationArm.setDefaultCommand(HOLD);
     // armCatchLeft.setDefaultCommand(HOLD);
@@ -75,10 +79,20 @@ public class RobotContainer {
   private void configureBindings() {
     m_driverController
     .a()
-    .onTrue(new LiftCommand(lift, true));
+    .onTrue(new InstantCommand(() -> SmartDashboard.putString("A Button", "pressed"))
+      .andThen(new ArmRotationCommand(testArm, 1)));
     m_driverController
     .b()
-    .onTrue(new LiftCommand(lift, false));
+    .onTrue(new InstantCommand(() -> SmartDashboard.putString("B Button", "pressed"))
+      .andThen(new ArmRotationCommand(testArm,-1)));
+    m_driverController
+    .x()
+    .onTrue(new InstantCommand(() -> SmartDashboard.putString("X Button", "pressed"))
+      .andThen(new ArmRotationCommand(testArm, 0)));
+    m_driverController
+    .y()
+    .onTrue(new InstantCommand(() -> SmartDashboard.putString("Y Button", "pressed"))
+      .andThen(Commands.run(() -> testArm.setMotorVolt(m_driverController.getLeftY()/3), testArm)));
   }
 
   public Command getAutonomousCommand() {

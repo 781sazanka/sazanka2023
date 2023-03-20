@@ -12,7 +12,6 @@ import frc.robot.subsystems.Lift;
 public class LiftCommand extends CommandBase {
   private final Lift lift;
   private boolean isUp;
-  private boolean isFinished;
 
   public LiftCommand(Lift lift, boolean isUp) {
     this.lift = lift;
@@ -59,8 +58,7 @@ public class LiftCommand extends CommandBase {
   @Override
   public boolean isFinished(){
     // TODO: figure out whether isGoal method will work without disabled mode
-    if (-LiftConstants.Tolerance < (lift.getSetPoint()-lift.getMeasurement()) &&
-    (lift.getSetPoint()-lift.getMeasurement()) < LiftConstants.Tolerance) {
+    if (Math.abs(lift.getSetPoint()-lift.getMeasurement()) <= Math.abs(LiftConstants.Tolerance)) {
       if (isUp)
         SmartDashboard.putString("Lift State","UP Reached");
       else 

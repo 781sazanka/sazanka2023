@@ -56,9 +56,8 @@ public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
     right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     left_motor.setSmartCurrentLimit(40);
     right_motor.setSmartCurrentLimit(40);
-
+    //TODO: make sure as volt of leftmotor increases slider will extend
     right_motor.follow(left_motor, false);
-    //TODO: figure out whether should invert this
     left_motor.setInverted(false);
     
     encoder.setPositionConversionFactor(SliderConstants.kEncoderDistancePerPulse);
@@ -81,7 +80,6 @@ public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
 
   @Override
   public double getMeasurement() {
-    //TODO: figure out the direction / make sure the data will increase as slider becomes longer
     return encoder.getPosition();
   }
 
@@ -90,10 +88,13 @@ public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
    */
   public void runWithSetPoint(double setPointInMeters){
     setGoal(setPointInMeters);
-    this.setPointInMeters = setPointInMeters;
+    setSetPoint(setPointInMeters);
     enable();
   }
-
+  public void setSetPoint(double setPointInMeters) {
+    this.setPointInMeters = setPointInMeters;
+  }
+  
   public double getSetPoint() {
     return this.setPointInMeters;
   }
@@ -130,6 +131,7 @@ public class Slider extends ProfiledPIDSubsystem implements ProfiledInterface{
   }
   public void getConvertedEncoderData() {
     disable();
+    //TODO: make sure the encoder data will increase as it extends
     SmartDashboard.putNumber("Slider Encoder Position [m]", encoder.getPosition());
     SmartDashboard.putNumber("Slider Encoder Velocity [m/s]", encoder.getVelocity());
   }

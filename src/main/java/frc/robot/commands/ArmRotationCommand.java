@@ -12,7 +12,6 @@ import frc.robot.subsystems.ArmRotation;
 public class ArmRotationCommand extends CommandBase {
   private final ArmRotation arm;
   private final double setPointInRads;
-  private final Timer timer = new Timer();
   /**
    * @param arm               
    * @param setPointInRads    this is not a absolute setpoint, it is a relative setpoint from the robot starts
@@ -26,17 +25,24 @@ public class ArmRotationCommand extends CommandBase {
   //TODO: figure out whether should put runWithSetPoint method in excute or initialize
   @Override
   public void initialize() {
-    SmartDashboard.putString("Arm State", setPointInRads + "moving");
-    arm.runWithSetPoint(setPointInRads);
-    timer.start();
+    SmartDashboard.putString("Arm State", setPointInRads + " moving");
   }
   
+  @Override 
+  public void execute() {
+    arm.runWithSetPoint(setPointInRads);
+
+    arm.getConvertedEncoderData();
+    SmartDashboard.putNumber("getMeasurement [rad]", arm.getMeasurement());
+    SmartDashboard.putNumber("getSetPoint [rad]", arm.getSetPoint());
+  }
   @Override
   public boolean isFinished() {
     // TODO: make sure this will return true when the arm reaches the setpoint
     // TODO; test whether the timer will work as a limit
-    if (arm.isGoal() || timer.hasElapsed(10)) {
-      SmartDashboard.putString("Arm State", setPointInRads + "reached");
+    if (arm.checkAtSetPoint()) {
+      SmartDashboard.putString("Arm State", setPointInRads + " reached");
+      arm.stop();
       return true;
     } else {
       return false;

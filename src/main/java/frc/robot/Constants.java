@@ -32,17 +32,20 @@ public final class Constants {
     public static final double GEAR_RATIO = 12.75;
     public static final double WHEEL_CIRCUMFERENCE = Math.PI * WHEEL_DIAMETER;
     public static final double SENSOR_UNITS_PER_METER =
-            (SENSOR_UNITS_PER_REV * GEAR_RATIO) / WHEEL_CIRCUMFERENCE;
+      (SENSOR_UNITS_PER_REV * GEAR_RATIO) / WHEEL_CIRCUMFERENCE;
 
     public static final double DRIVE_VELOCITY_KP = 1.7936;
 
     public static final double TRACK_WIDTH = 0.555;
     public static final DifferentialDriveKinematics KINEMATICS =
-            new DifferentialDriveKinematics(TRACK_WIDTH);
+      new DifferentialDriveKinematics(TRACK_WIDTH);
 
     public static final double FEED_FORWARD_KS = 0.15053;
     public static final double FEED_FORWARD_KV = 2.7446;
     public static final double FEED_FORWARD_KA = 0.21353;
+
+    public static final double kOffBalanceAngleThresholdDegrees = 10.0;
+    public static final double kOonBalanceAngleThresholdDegrees = 5.0;
   }
 
   public static final class LiftConstants {
@@ -86,15 +89,17 @@ public final class Constants {
     public static final double kVVoltSecondPerRad = 0.5;
     public static final double kAVoltSecondSquaredPerRad = 0.1;
     
-    public static final double kMaxVelocityRadPerSecond = 3;            //[rad/s]
-    public static final double kMaxAccelerationRadPerSecSquared = 10;   //[rad/s*2]
+    public static final double kMaxVelocityRadPerSecond = 0.3;            //[rad/s]
+    public static final double kMaxAccelerationRadPerSecSquared = 0.1;   //[rad/s*2]
 
     public static final int kEncoderPPR = 1;
     public static final int ArmGearRatio = 100;
 
     public static final double ArmButtomRads = 0.0;         //[rad]
-    public static final double ArmForwardVertRads = -3.0;   //[rad]
-    public static final double ArmBackwardVertRads = 3.0;   //[rad]
+    public static final double ArmOutsideMaxRads = 2.023;
+    public static final double ArmInsideMaxRads = -2.348;
+    public static final double ArmForwardVertRads = 1.548;   //[rad]
+    public static final double ArmBackwardVertRads = -2.005;   //[rad]
     public static final double Tolerance = 0.1;             //[rad]
   }
 
@@ -117,9 +122,9 @@ public final class Constants {
     public static final double kMaxAccelerationMeterPerSecSquared = 10; //[m/s*2]
 
     public static final int kEncoderPPR = 1;
-    public static final int SliderGearRatio = 1;
+    public static final int ArmCatchGearRatio = 1;
     public static final double wheelDiameter = 0.1; //[m]
-    public static final double kEncoderDistancePerPulse = wheelDiameter * Math.PI / (double)(kEncoderPPR*SliderGearRatio); //[m]
+    public static final double kEncoderDistancePerPulse = wheelDiameter * Math.PI / (double)(kEncoderPPR*ArmCatchGearRatio); //[m]
 
     // measured from the horizontal in radian
     public static final double ArmFarPose = 0.0;      //[m]
@@ -147,11 +152,11 @@ public final class Constants {
     public static final int kEncoderPPR = 1;
     public static final int SliderGearRatio = 16;
     //TODO: measure the diameter
-    public static final double wheelDiameter = 0.02; //[m]
+    public static final double wheelDiameter = 0.0130; //[m]
     public static final double kEncoderDistancePerPulse = wheelDiameter * Math.PI / (double)(kEncoderPPR*SliderGearRatio); //[m]
 
     public static final double SliderShortestInMeters = 0.0;  //[m] set the shortest as 0
-    public static final double SliderLongestInMeters = 0.642;   //[m] maximum distance
+    public static final double SliderLongestInMeters = 1.0;   //[m] maximum distance
     public static final double Tolerance = 0.02;               //[m]
   }
   public static final class AutoConstants {
