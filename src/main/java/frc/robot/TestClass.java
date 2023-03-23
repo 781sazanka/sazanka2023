@@ -9,8 +9,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.*;
-import frc.robot.commands.LiftCommand;
 import frc.robot.subsystems.DriveTrain;
 import frc.robot.subsystems.Lift;
 import frc.robot.subsystems.Slider;
@@ -177,7 +177,7 @@ public class TestClass {
    * @test finished / I can use this parameters as a command
    * @attention it is better to have a feedforward control
    */
-  public static class LiftTest {
+  public static class LiftTest extends SubsystemBase{
     // private final Lift lift = new Lift(true);
     
     // public void init() {
@@ -225,15 +225,23 @@ public class TestClass {
     }
 
     public void move_motor() {
-      if (encoder.getPosition() < 0.3) {
-        left_motor.set(0.4);
-      } else if(encoder.getPosition() < 0.4){
-        left_motor.set(0.20);
-      } else if(encoder.getPosition() < 0.6){
-        left_motor.set(0.15);
-      } else {
-        left_motor.set(0.04);
+      if (encoder.getPosition() < 0.1) {
+        left_motor.set(1);
+      } else if(encoder.getPosition() < 0.3) {
+        left_motor.set(0.6);
       }
+      else if(encoder.getPosition() < 0.4){
+        left_motor.set(1);
+      } else if(encoder.getPosition() < 0.5){
+        left_motor.set(1);
+      } else {
+        left_motor.set(0.1);
+      }
+    }
+
+    public void move_motor_speed(double speed) {
+      left_motor.set(speed);
+      SmartDashboard.putNumber("lift speed [rad/s]", speed);
     }
 
     public void getEncoder() {
@@ -312,30 +320,16 @@ public class TestClass {
     }
 
     public void excuteUpCommand() {
-      SmartDashboard.putData("Lift UP Command", new LiftCommand(lift, true));
     }
     public void excuteDownCommand() {
-      SmartDashboard.putData("Lift DOWN Command", new LiftCommand(lift, false));
     }
     public void excuteLiftHoldCommand() {
-      SmartDashboard.putData("Lift Hold Command", new LiftHoldCommand(lift));
     }
     public void putData() {
       lift.getConvertedEncoderData();
       SmartDashboard.putBoolean("isGoal", lift.isSetPoint());
       SmartDashboard.putNumber("getSetPoint", lift.getSetPoint());
       SmartDashboard.putNumber("getMeasurement", lift.getMeasurement());
-    }
-
-    public static class LiftHoldCommand extends CommandBase {
-      private Lift lift;
-      public LiftHoldCommand(Lift lift){
-        addRequirements(lift);
-      }
-      @Override
-      public void initialize() {
-        this.lift.runWithSetPoint(this.lift.getSetPoint());
-      }
     }
   }
 }

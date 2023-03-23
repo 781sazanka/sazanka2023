@@ -5,6 +5,8 @@
 package frc.robot;
 
 import frc.robot.Constants.*;
+import frc.robot.Constants.OperatorConstants.ModeCount;
+import frc.robot.TestClass.LiftTest;
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -17,7 +19,7 @@ import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -37,17 +39,25 @@ public class RobotContainer {
   // controller
   public static final CommandXboxController m_driverController =
     new CommandXboxController(OperatorConstants.DriverControllerPort);
-  public static final CommandPS4Controller m_mechanicsController =
-    new CommandPS4Controller(OperatorConstants.MechanicsControllerPort);
+  public static final CommandXboxController m_mechanicsController =
+    new CommandXboxController(OperatorConstants.MechanicsControllerPort);
+
+  private ModeCount operateMode;
+  private int modeCounter;
 
   // subsystems
   private static final DriveTrain driveTrain = new DriveTrain();
-  // private static final Lift lift = new Lift(true);
-  // private static final ArmRotation rotationArm = new ArmRotation(true);
+  private static final Lift lift = new Lift(true);
+  private static final ArmRotation armRotation = new ArmRotation(true);
   // private static final ArmCatch armCatchLeft = new ArmCatch(true, true);
   // private static final ArmCatch armCatchRight = new ArmCatch(false, true);
   // private static final Slider slider = new Slider(true);
-  private static final ArmRotation testArm = new ArmRotation(true);
+  // private static final ArmRotation testArm = new ArmRotation(true);
+
+  Trigger IsModeRunningToTake = new Trigger(this.operateMode == ModeCount.RunningToTake);
+  Trigger IsModeCatching = new Trigger(armCatch::isRightReached);
+  Trigger IsModeLiftingExtending = new Trigger();
+  Trigger IsModePutting = new Trigger();
 
   // commands
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
@@ -58,11 +68,13 @@ public class RobotContainer {
   private static String pathname;
 
   public RobotContainer() {
+    operateMode = ModeCount.RunningToTake;
+    modeCounter = operateMode.getCode();
     configureBindings();
 
     // default commands settings
-    // driveTrain.setDefaultCommand(ARCADE_DRIVE);
-    // liftArm.setDefaultCommand(HOLD);
+    driveTrain.setDefaultCommand(ARCADE_DRIVE);
+    lift.setDefaultCommand(new LiftCommand(lift, LiftConstants.LiftOperateMode.Stay));
     // rotationArm.setDefaultCommand(HOLD);
     // armCatchLeft.setDefaultCommand(HOLD);
     // armCatchRight.setDefaultCommand(HOLD);
@@ -77,22 +89,45 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    m_driverController
-    .a()
-    .onTrue(new InstantCommand(() -> SmartDashboard.putString("A Button", "pressed"))
-      .andThen(new ArmRotationCommand(testArm, 1)));
-    m_driverController
-    .b()
-    .onTrue(new InstantCommand(() -> SmartDashboard.putString("B Button", "pressed"))
-      .andThen(new ArmRotationCommand(testArm,-1)));
-    m_driverController
+    // m_driverController
+    // .a()
+    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("A Button", "pressed"))
+    //   .andThen(new ArmRotationCommand(testArm, 1)));
+    // m_driverController
+    // .b()
+    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("B Button", "pressed"))
+    //   .andThen(new ArmRotationCommand(testArm,-1)));
+    // m_driverController
+    // .x()
+    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("X Button", "pressed"))
+    //   .andThen(new ArmRotationCommand(testArm, 0)));
+    // m_driverController
+    // .y()
+    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("Y Button", "pressed"))
+    //   .andThen(Commands.run(() -> testArm.setMotorVolt(m_driverController.getLeftY()/3), testArm)));
+    m_mechanicsController
+    .a().debounce(0.5)
+    .onTrue(new InstantCommand(() -> 
+      this.operateMode = ModeCount.getType(modeCounter++)));
+    m_mechanicsController
+    .b().debounce(0.5)
+    .onTrue(new InstantCommand(() -> 
+      this.operateMode = ModeCount.getType(modeCounter--)));
+    
+
+    m_mechanicsController
     .x()
-    .onTrue(new InstantCommand(() -> SmartDashboard.putString("X Button", "pressed"))
-      .andThen(new ArmRotationCommand(testArm, 0)));
-    m_driverController
+    .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Up));
+    m_mechanicsController
     .y()
-    .onTrue(new InstantCommand(() -> SmartDashboard.putString("Y Button", "pressed"))
-      .andThen(Commands.run(() -> testArm.setMotorVolt(m_driverController.getLeftY()/3), testArm)));
+    .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Down));
+    m_mechanicsController
+    .a()
+    .onTrue(new ArmRotationCommand(armRotation, ArmRotationConstants.ArmForwardVertRads));
+    m_mechanicsController
+    .b()
+    .onTrue(new ArmRotationCommand(armRotation, ArmRotationConstants.ArmBackwardVertRads));
+
   }
 
   public Command getAutonomousCommand() {

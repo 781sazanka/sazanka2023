@@ -19,8 +19,8 @@ import frc.robot.subsystems.ArmRotation;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private RobotContainer m_robotContainer;
-  private boolean robotContainerFlag = false;
-  private SliderTest slider = new SliderTest();
+  private boolean robotContainerFlag = true;
+  // private SliderTest slider = new SliderTest();
   // private ArmRotationTest armTest = new ArmRotationTest();
   // private SimpleMotorTest testMotor = new SimpleMotorTest();
   // private LiftTest testLift = new LiftTest();
@@ -78,19 +78,22 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
     // testMotor.init();
-    slider.init();
+    // slider.init();
     // armTest.init();
+    // testLift.init();
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    slider.move_motor();
-    slider.getLeft_encoder();
+    // slider.move_motor();
+    // slider.getLeft_encoder();
     // testMotor.move_motor();
     // testMotor.displayData();
     // armTest.move_motor();
-    // armTest.getEncoder();
+    // // armTest.getEncoder();
+    // testLift.move_motor();
+    // testLift.getEncoder();
   }
 
   @Override

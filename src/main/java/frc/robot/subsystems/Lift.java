@@ -3,64 +3,50 @@
 // the WPILib BSD license file in the root directory of this project.
 
 /*
- * TODO: make sure the encoder value is CW;plus, CCW:minus
+ * the encoder value is extending:increase, shrinking:decrease
  * ATTENTION: the encoder value is "0" for extended position,
  */
+
+ /**
+  * @review finished (3/22 23:00)
+  */
 package frc.robot.subsystems;
 
-import frc.robot.Constants.LiftConstants;
+import static frc.robot.Constants.LiftConstants.*;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.RelativeEncoder;
 
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * @review finished
  * @test 3/17 going to test
+ * Don't need to initialize any parameters each execution
  */
-public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
-  private final CANSparkMax left_motor = new CANSparkMax(LiftConstants.LeftMotorID,
+public class Lift extends SubsystemBase{
+  private final CANSparkMax leftMotor = new CANSparkMax(LeftMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
-  private final CANSparkMax right_motor = new CANSparkMax(LiftConstants.RightMotorID,
+  private final CANSparkMax rightMotor = new CANSparkMax(RightMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
-  private RelativeEncoder encoder = left_motor.getEncoder();
+  private RelativeEncoder encoder = leftMotor.getEncoder();
   
-  private double setPointInRads = LiftConstants.LiftHorizontalPos;
-  private boolean isReachedGoal = false;
-
-  private final ArmFeedforward m_feedforward = new ArmFeedforward(
-      LiftConstants.kSVolts, LiftConstants.kGVolts,
-      LiftConstants.kVVoltSecondPerRad, LiftConstants.kAVoltSecondSquaredPerRad);
+  private double setPointInRads = LiftHorizontalPos;
 
   private Lift() {
-    super(
-        new ProfiledPIDController(
-            LiftConstants.kP,
-            LiftConstants.kI,
-            LiftConstants.kD,
-            new TrapezoidProfile.Constraints(
-                LiftConstants.kMaxVelocityRadPerSecond,
-                LiftConstants.kMaxAccelerationRadPerSecSquared)),
-        0);
-    getController().setTolerance(LiftConstants.Tolerance);
-    
-    left_motor.restoreFactoryDefaults();
-    right_motor.restoreFactoryDefaults();
-    left_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    right_motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    leftMotor.restoreFactoryDefaults();
+    rightMotor.restoreFactoryDefaults();
+    leftMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    rightMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
 
-    right_motor.follow(left_motor, true);
-    left_motor.setInverted(true);
+    rightMotor.follow(leftMotor, true);
+    leftMotor.setInverted(true);
     
-    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / LiftConstants.LiftGearRatio);
-    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / LiftConstants.LiftGearRatio);
+    encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / LiftGearRatio);
+    encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / LiftGearRatio);
   }
 
   public Lift(boolean isInitialize){
@@ -71,24 +57,33 @@ public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
     }
   }
 
-  @Override
-  public void useOutput(double output, TrapezoidProfile.State setpoint) {
-    double feedforward = m_feedforward.calculate(setpoint.position, setpoint.velocity);
-    left_motor.setVoltage(output + feedforward);
+  public void executeUp() {
+    if (getMeasurement() < LiftExtendedPos/3) {
+      setMotorVolt(0.3);
+    } else if(LiftExtendedPos/3 <= getMeasurement() && getMeasurement() <= LiftExtendedPos/3*2){
+      setMotorVolt(0.15);
+    } else {
+      setMotorVolt(0.1);
+    }
   }
 
-  @Override
+  public void executeDown() {
+    if (getMeasurement() > LiftExtendedPos/3*2) {
+      setMotorVolt(-0.05);
+    } else if(LiftExtendedPos/3 <= getMeasurement() && getMeasurement() <= LiftExtendedPos/3*2){
+      setMotorVolt(-0.03);
+    } else {
+      setMotorVolt(0.05);
+    }
+  }
+
+  public void executeStay() {
+    if(!isSetPoint())
+      setMotorVolt(kP*(getSetPoint()-getMeasurement()));  // simple feedforward [kp * rad], KP should be positive
+  }
+
   public double getMeasurement() {
     return encoder.getPosition();
-  }
-
-  /**
-   * @param radians CW:plus CCW:minus
-   */
-  public void runWithSetPoint(double setPointInRads){
-    setGoal(setPointInRads);
-    setSetPoint(setPointInRads);
-    enable();
   }
 
   public double getSetPoint() {
@@ -100,16 +95,16 @@ public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
   }
 
   public void resetEncoders(){
-    encoder.setPosition(LiftConstants.LiftHorizontalPos);
+    encoder.setPosition(LiftHorizontalPos);
   }
 
   public void resetPositions() {
-    this.setPointInRads = LiftConstants.LiftHorizontalPos;
+    this.setPointInRads = LiftHorizontalPos;
   }
 
+  // return true if the error is within the tolerance
   public boolean isSetPoint() {
-    return getController().atSetpoint();
-    // return getController().atGoal() || isReachedGoal;
+    return (Math.abs(getMeasurement() - getSetPoint()) < Math.abs(Tolerance));
   }
 
   /* 
@@ -117,22 +112,22 @@ public class Lift extends ProfiledPIDSubsystem implements ProfiledInterface{
    * make sure to call disable method when use this method to control.
    */
   public void setMotorVolt(double volt){
-    disable();
-    if ((encoder.getPosition() <= LiftConstants.LiftExtendedPos) && (encoder.getPosition() >= LiftConstants.LiftHorizontalPos)) {
-      left_motor.set(volt);
+    if ((LiftHorizontalPos <= getMeasurement()) && (getMeasurement() <= LiftExtendedPos)) {
+      leftMotor.set(volt);
+      // SmartDashboard.putNumber("voltage setpoint [V]", volt);
+      // SmartDashboard.putNumber("applied voltage [V]", leftMotor.getAppliedOutput());
     } else {
-      // this.isReachedGoal = true;
+      // SmartDashboard.putString("Lift State", "WARNING :: Exceeded the limit!!!");
+      //TODO: it might be better to reverse the motor for a second
       stop();
     }
   }
 
   public void stop(){
-    disable();
-    left_motor.stopMotor();
-    right_motor.stopMotor();
+    leftMotor.stopMotor();
+    rightMotor.stopMotor();
   }
   public void getConvertedEncoderData() {
-    disable();
     SmartDashboard.putNumber("ArmRotation Encoder Position [rad]", encoder.getPosition());
     SmartDashboard.putNumber("ArmRotation Encoder Velocity [rad/s]", encoder.getVelocity());
   }

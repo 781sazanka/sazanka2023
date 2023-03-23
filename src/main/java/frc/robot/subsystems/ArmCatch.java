@@ -5,191 +5,218 @@
 package frc.robot.subsystems;
 
 import frc.robot.Constants.ArmCatchConstants;
+import frc.robot.Constants.ArmCatchConstants.*;
+import frc.robot.Constants.Direction;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMax.ExternalFollower;
 
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  *  @review finished(3/18 9:50)
  * @test 3/17 going to test
  */
-public class ArmCatch extends ProfiledPIDSubsystem implements ProfiledInterface{
-  private final CANSparkMax motor;
-  private RelativeEncoder encoder;
-  private int CANID;
-  private boolean inverted;
-  private double setPointInMeters = ArmCatchConstants.ArmFarPose;
-  // DigitalInput farLimitSwitch;
-  // DigitalInput nearLimitSwitch;
+public class ArmCatch extends SubsystemBase {
+  private final CANSparkMax[] Motor = {new CANSparkMax(ArmCatchConstants.LeftID, CANSparkMaxLowLevel.MotorType.kBrushless),
+                                       new CANSparkMax(ArmCatchConstants.RightID, CANSparkMaxLowLevel.MotorType.kBrushless)};
+  private RelativeEncoder[] Encoder = {Motor[Direction.Left.getCode()].getEncoder(),
+                                       Motor[Direction.Right.getCode()].getEncoder()};
+  private double[] CurrentPosition = {ArmCatchConstants.ArmFarPose,ArmCatchConstants.ArmFarPose};
+  
+  private double[] leftVel = {0,0};
+  private double[] rightVel = {0,0};
+  private State[] motorState = {State.Disabled,State.Disabled};
+  private int cnt = 0;
 
-  private final SimpleMotorFeedforward m_feedforward = new SimpleMotorFeedforward(
-    ArmCatchConstants.kSVolts, ArmCatchConstants.kVVoltSecondPerRad, ArmCatchConstants.kAVoltSecondSquaredPerRad);
-    
-  private ArmCatch(boolean isLeft) {
-    super(
-        new ProfiledPIDController(
-          ArmCatchConstants.kP,
-          ArmCatchConstants.kI,
-          ArmCatchConstants.kD,
-          new TrapezoidProfile.Constraints(
-              ArmCatchConstants.kMaxVelocityMeterPerSecond,
-              ArmCatchConstants.kMaxAccelerationMeterPerSecSquared)),
-        0);
-    getController().setTolerance(ArmCatchConstants.Tolerance);
+  private ArmCatch() {
+    Motor[Direction.Left.getCode()].restoreFactoryDefaults();
+    Motor[Direction.Right.getCode()].restoreFactoryDefaults();
+    Motor[Direction.Left.getCode()].setIdleMode(CANSparkMax.IdleMode.kBrake);
+    Motor[Direction.Right.getCode()].setIdleMode(CANSparkMax.IdleMode.kBrake);
+    Motor[Direction.Left.getCode()].setInverted(false);
+    Motor[Direction.Right.getCode()].setInverted(false);
+    Motor[Direction.Left.getCode()].setSmartCurrentLimit(30);
+    Motor[Direction.Right.getCode()].setSmartCurrentLimit(30);
 
-    if (isLeft) {
-      this.motor = new CANSparkMax(ArmCatchConstants.LeftID, CANSparkMaxLowLevel.MotorType.kBrushless);
-      this.CANID = ArmCatchConstants.LeftID;
-    } else {
-      this.motor = new CANSparkMax(ArmCatchConstants.RightID, CANSparkMaxLowLevel.MotorType.kBrushless);
-      this.CANID = ArmCatchConstants.RightID;
-    }
+    Encoder[Direction.Left.getCode()].setPositionConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);
+    Encoder[Direction.Left.getCode()].setVelocityConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);
+    Encoder[Direction.Right.getCode()].setPositionConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);
+    Encoder[Direction.Right.getCode()].setVelocityConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);
 
-    this.encoder = this.motor.getEncoder();
-    // //TODO: configuring the limit switches, true:when reaching the setpoint, false:when not reaching
-    // if (isLeft) {
-    //   farLimitSwitch = new DigitalInput(0);
-    //   nearLimitSwitch = new DigitalInput(1);
-    // } else {
-    //   farLimitSwitch = new DigitalInput(2);
-    //   nearLimitSwitch = new DigitalInput(3);
-    // }
+    Encoder[Direction.Left.getCode()].setMeasurementPeriod(50);
+    Encoder[Direction.Right.getCode()].setMeasurementPeriod(50);
 
-    motor.restoreFactoryDefaults();
-    motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    motor.setSmartCurrentLimit(40);
-
-    // TODO: make sure to invert motor direction so that positive is inside
-    // TODO: make sure to encoder configure conversion factor so that positive is inside
-    if (isLeft) {
-      motor.setInverted(false);
-      encoder.setPositionConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);
-      encoder.setVelocityConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);  
-    } else {
-      motor.setInverted(false);
-      encoder.setPositionConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);
-      encoder.setVelocityConversionFactor(ArmCatchConstants.kEncoderDistancePerPulse);  
-    }
+    motorState[Direction.Left.getCode()] = motorState[Direction.Right.getCode()] = State.Disabled;
   }
 
-  public ArmCatch(Boolean isLeft,boolean isInitialize) {
-    this(isLeft);
+  public ArmCatch(boolean isInitialize) {
+    this();
     if (isInitialize) {
       resetEncoders();
       resetPositions();
     }
   }
 
-  @Override
-  public void useOutput(double output, TrapezoidProfile.State setpoint) {
-    double feedforward = m_feedforward.calculate(setpoint.position, setpoint.velocity);
-    motor.setVoltage(output + feedforward);
+  public void parameterIinit() {
+    leftVel[0] = leftVel[1] = 0;
+    rightVel[0] = rightVel[1] = 0;
+    motorState[Direction.Left.getCode()] = motorState[Direction.Right.getCode()] = State.UnReached;
+    cnt = 0;
   }
 
-  @Override
-  public double getMeasurement() {
-    /*
-     * TODO: changing the encoder value depending on the direction
-     * this might not needed since it can be changed in conversion factor above
-     */
-
-    // if (this.CANID == ArmCatchConstants.LeftID) {
-    //   return encoder.getPosition();
-    // } else {
-    //   return -encoder.getPosition();
-    // }
-
-    return encoder.getPosition();
+  //fin
+  public void resetEncoders(){
+    Encoder[Direction.Left.getCode()].setPosition(ArmCatchConstants.ArmFarPose);
+    Encoder[Direction.Right.getCode()].setPosition(ArmCatchConstants.ArmFarPose);    
+  }
+  //fin
+  public void resetPositions() {
+    this.CurrentPosition[Direction.Left.getCode()] = this.CurrentPosition[Direction.Right.getCode()] = ArmCatchConstants.ArmFarPose;
   }
 
-  /**
-   * @param radians CW:plus CCW:minus
-   */
-  public void runWithSetPoint(double setPointInMeters){
-    setGoal(setPointInMeters);
-    setSetPoint(setPointInMeters);
-    enable();
-  }
-
-  public double getSetPoint() {
-    return this.setPointInMeters;
-  }
-
-  public String getMotorName() {
-    if (this.CANID == ArmCatchConstants.LeftID) {
-      return "Left";
+  // もしleft arm がターゲットに到達したら、加速度が減少するので、それを検知する
+  //fin
+  public boolean isLeftReached() {
+    if(getAccel()[Direction.Left.getCode()] < ArmCatchConstants.AccelerationThreshold) 
+      motorState[Direction.Left.getCode()] = State.Reached;
+    
+    if(motorState[Direction.Left.getCode()] == State.Reached){
+      return true;
     } else {
-      return "Right";
+      return false;
     }
   }
 
-  public void resetEncoders(){
-    encoder.setPosition(ArmCatchConstants.ArmFarPose);
+  // もしright arm がターゲットに到達したら、加速度が減少するので、それを検知する
+  //fin
+  public boolean isRightReached() {
+    if(getAccel()[Direction.Right.getCode()] < ArmCatchConstants.AccelerationThreshold)
+      motorState[Direction.Right.getCode()] = State.Reached;
+
+    if(motorState[Direction.Right.getCode()] == State.Reached){
+      return true;
+    } else {
+      return false;
+    }
+  }
+  //fin
+  public boolean isBothReached() {
+    return (motorState[Direction.Left.getCode()] == State.Reached) && (motorState[Direction.Right.getCode()] == State.Reached);
   }
 
-  public void resetPositions() {
-    this.setPointInMeters = ArmCatchConstants.ArmFarPose;
+  //fin
+  public void executeLeftReached() {
+    Motor[Direction.Left.getCode()].follow(ExternalFollower.kFollowerDisabled, ArmCatchConstants.RightID);
+    setMotorLeftVolt(0);
+    if(motorState[Direction.Right.getCode()] != State.Reached)
+      setMotorRightVolt(0.1);
+  }
+  //fin
+  public void executeRightReached() {
+    Motor[Direction.Left.getCode()].follow(ExternalFollower.kFollowerDisabled, ArmCatchConstants.RightID);
+    setMotorRightVolt(0);
+    if(motorState[Direction.Left.getCode()] != State.Reached)
+      setMotorLeftVolt(0.1);
+  }
+  //fin
+  public void executeBothReached() {
+    //TODO: set the invert direction / the direction should be opposite
+    Motor[Direction.Right.getCode()].follow(Motor[Direction.Left.getCode()],false);
+    Commands.runOnce(() -> setMotorLeftVolt(0.1), this)
+    .withTimeout(0.5)
+    .andThen(() -> {Motor[Direction.Left.getCode()].stopMotor(); Motor[Direction.Right.getCode()].stopMotor();})
+    .andThen(() -> reachTheSetPointWithFollow(ArmCatchConstants.ArmLeftMediumPose))
+    .andThen(() -> setSetPoint( getMeasurement()[Direction.Left.getCode()]
+                               ,getMeasurement()[Direction.Right.getCode()]));
+  }
+  //fin
+  public void executeFollow() {
+    //TODO: make sure the direction is opposite
+    Motor[Direction.Right.getCode()].follow(Motor[Direction.Left.getCode()],false);
+    setMotorLeftVolt(0.2);
+  }
+  //fin
+  public double[] getVelocity() {
+    double[] vel = {Encoder[Direction.Left.getCode()].getVelocity(),Encoder[Direction.Right.getCode()].getVelocity()};
+    return vel;
+  }
+  //fin
+  public double[] getMeasurement() {
+    double[] measurement = {Encoder[Direction.Left.getCode()].getPosition(),Encoder[Direction.Right.getCode()].getPosition()};
+    return measurement;
+  }
+  //fin
+  private double[] calcAccel(double leftAfter, double leftPrev, double rightAfter, double rightPrev) {
+    double[] accel = {(leftAfter-leftPrev) / Encoder[Direction.Left.getCode()].getMeasurementPeriod()
+                      ,(rightAfter-rightPrev) /Encoder[Direction.Right.getCode()].getMeasurementPeriod()};
+    return accel;
+  }
+  //fin
+  public double[] getAccel() {
+    double[] acceleration;
+    if(cnt++/2 == 0) {
+      leftVel[0] = getVelocity()[Direction.Left.getCode()];
+      rightVel[0] = getVelocity()[Direction.Right.getCode()];
+      acceleration = calcAccel(leftVel[0], leftVel[1], rightVel[0], rightVel[1]);
+
+    } else {
+      leftVel[1] = getVelocity()[Direction.Left.getCode()];
+      rightVel[1] = getVelocity()[Direction.Right.getCode()];
+      acceleration = calcAccel(leftVel[1], leftVel[0], rightVel[1], rightVel[0]);
+    }
+    return acceleration;
+  }
+  //fin
+  public double getLeftSetPoint() {
+    return this.CurrentPosition[Direction.Left.getCode()];
+  }
+  //fin
+  public double getRightSetPoint() {
+    return this.CurrentPosition[Direction.Right.getCode()];
+  }
+  //fin
+  public void setSetPoint(double leftSetPointInMeters, double rightSetPointInMeters){
+    this.CurrentPosition[Direction.Left.getCode()] = leftSetPointInMeters;
+    this.CurrentPosition[Direction.Right.getCode()] = rightSetPointInMeters;
+  }
+  //fin
+  public void setMotorLeftVolt (double volt) {
+    if((getMeasurement()[Direction.Left.getCode()] > ArmCatchConstants.ArmFarPose) && (getMeasurement()[Direction.Left.getCode()] < ArmCatchConstants.ArmNearPose))
+      Motor[Direction.Left.getCode()].set(volt);
+    else
+      Motor[Direction.Left.getCode()].stopMotor();
+  }
+  //fin
+  public void setMotorRightVolt (double volt) {
+    if((getMeasurement()[Direction.Right.getCode()] > ArmCatchConstants.ArmFarPose) && (getMeasurement()[Direction.Right.getCode()] < ArmCatchConstants.ArmNearPose))
+      Motor[Direction.Right.getCode()].set(volt);
+    else
+      Motor[Direction.Right.getCode()].stopMotor();
   }
 
-  // public boolean getFarLimitSwitch() {
-  //   return farLimitSwitch.get();
-  // }
-
-  // public boolean getNearLimitSwitch() {
-  //   return nearLimitSwitch.get();
-  // }
-
-  public void setSetPoint(double setPointInMeters){
-    this.setPointInMeters = setPointInMeters;
+  public void reachTheSetPointWithFollow(double leftSetPoint) {
+    //TODO: make sure this will go the same direction
+    Motor[Direction.Right.getCode()].follow(Motor[Direction.Left.getCode()],false);
+    while(Math.abs(leftSetPoint - getMeasurement()[Direction.Left.getCode()]) > Math.abs(ArmCatchConstants.Tolerance)) {
+      if(leftSetPoint > getMeasurement()[Direction.Left.getCode()])
+        setMotorLeftVolt(0.1);
+      else 
+        setMotorLeftVolt(-0.1);
+    }
+    setMotorLeftVolt(0);
+    setMotorRightVolt(0);
   }
-
-  public boolean isGoal() {
-    return getController().atSetpoint();
-  }
-  // //TODO: check whether the command is correct
-  // public void reachFarLimitSwitch() {
-  //   SmartDashboard.putBoolean(getMotorName() + "FarLimitSwitch", true);
-  //   setSetPoint(ArmCatchConstants.ArmFarPose);
-  //   Commands.runOnce(() -> setMotorVolt(-0.1,this.inverted), this)
-  //     .withTimeout(0.3)
-  //     .andThen(() -> stop(),this);
-  // }
-
-  // public void reachNearLimitSwitch() {
-  //   SmartDashboard.putBoolean(getMotorName() + "NearLimitSwitch", true);
-  //   setSetPoint(ArmCatchConstants.ArmNearPose);
-  //   Commands.runOnce(() -> setMotorVolt(0.1,this.inverted), this)
-  //   .withTimeout(0.3)
-  //   .andThen(() -> stop(),this);
-  // }
   
-  /* 
-   * the methods below are for radio control and testing
-   * make sure to call disable method when use this method to control.
-   */
-  public void setMotorVolt(double motorVolt, boolean motorInverted){
-    disable();
-    motor.setInverted(motorInverted);
-    //TODO: make sure the volt will increase when going inside
-    motor.set(motorVolt);
-  }
-
-  public void stop(){
-    disable();
-    motor.stopMotor();
-  }
+  //fin
   public void getConvertedEncoderData() {
-    disable();
-    String motorName = getMotorName();
-    SmartDashboard.putNumber("ArmRotation" + motorName + "Position [m]", encoder.getPosition());
-    SmartDashboard.putNumber("ArmRotation" + motorName + "Velocity [m/s]", encoder.getVelocity());
+    SmartDashboard.putNumber("ArmRotation Left Position [m]", Encoder[Direction.Left.getCode()].getPosition());
+    SmartDashboard.putNumber("ArmRotation Left Velocity [m/s]", Encoder[Direction.Left.getCode()].getVelocity());
+    SmartDashboard.putNumber("ArmRotation Right Position [m]", Encoder[Direction.Right.getCode()].getPosition());
+    SmartDashboard.putNumber("ArmRotation Right Velocity [m/s]", Encoder[Direction.Right.getCode()].getVelocity());
   }
 }

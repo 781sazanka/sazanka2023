@@ -1,13 +1,11 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.ArmRotation;
 
 /**
- *  @review finished(3/18 9:50)
- * @test 3/17 going to test
+ *  @review finished(3/22 23:45)
  */
 public class ArmRotationCommand extends CommandBase {
   private final ArmRotation arm;
@@ -26,6 +24,7 @@ public class ArmRotationCommand extends CommandBase {
   @Override
   public void initialize() {
     SmartDashboard.putString("Arm State", setPointInRads + " moving");
+    arm.setSetPoint(setPointInRads);
   }
   
   @Override 
@@ -38,15 +37,21 @@ public class ArmRotationCommand extends CommandBase {
   }
   @Override
   public boolean isFinished() {
-    // TODO: make sure this will return true when the arm reaches the setpoint
-    // TODO; test whether the timer will work as a limit
     if (arm.checkAtSetPoint()) {
-      SmartDashboard.putString("Arm State", setPointInRads + " reached");
-      arm.stop();
       return true;
     } else {
       return false;
     }
+  }
+  @Override
+  public void end(boolean interrupted) {
+    if(interrupted) {
+      SmartDashboard.putString("Arm State", setPointInRads + " reached");
+    } else {
+      SmartDashboard.putString("Arm State", "GET INTERRUPTED");
+    }
+    arm.stop();
+
   }
 
   /*

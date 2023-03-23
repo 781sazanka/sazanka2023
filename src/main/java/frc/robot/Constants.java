@@ -19,6 +19,32 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int DriverControllerPort = 0;
     public static final int MechanicsControllerPort = 1;
+
+    public enum ModeCount {
+      RunningToTake(0),
+      Catching(1),
+      LiftingExtending(2),
+      Putting(3);
+    
+      private final int code;
+      private ModeCount(int code) {
+        this.code = code;
+      }
+    
+      public int getCode() {
+        return code;
+      }
+
+      public static ModeCount getType(final int id) {
+        ModeCount[] types = ModeCount.values();
+        for (ModeCount type : types) {
+            if (type.getCode() == id) {
+                return type;
+            }
+        }
+        return null;
+      }
+    }
   }
 
   public static final class DriveConstants {
@@ -52,46 +78,30 @@ public final class Constants {
     public static final int RightMotorID = 5;
     public static final int LeftMotorID = 6;
 
-    public static final double kP = 1;
-    public static final double kI = 0;
-    public static final double kD = 0;
-
-    // These are fake gains; in actuality these must be determined individually for each robot
-    public static final double kSVolts = 1;
-    public static final double kGVolts = 1;
-    public static final double kVVoltSecondPerRad = 0.5;
-    public static final double kAVoltSecondSquaredPerRad = 0.1;
-
-    public static final double kMaxVelocityRadPerSecond = 3;
-    public static final double kMaxAccelerationRadPerSecSquared = 10;
+    //TODO: tune the feedforward gain(measuring on the extended position)
+    public static final double kP = 1;    //Propotion value for feedforward
 
     public static final int EncoderPPR = 1;
+    //TODO: change the gear ratio
     public static final int LiftGearRatio = 16;
 
-    // The offset of the arm from the horizontal in its neutral position,
     // measured from the horizontal
+    //TODO: measure the position with a little tolerance & changing the tolerance
     public static final double LiftExtendedPos = 1.09; //[rad]
     public static final double LiftHorizontalPos = 0.0; //[rad]
     public static final double Tolerance = 0.04;       //[rad]
+
+    public enum LiftOperateMode {
+      Up,
+      Down,
+      Stay
+    }
   }
 
   public static final class ArmRotationConstants {
     // the conversion will be dealt within the encoder class / no need to create new conversion factor
     public static final int ID = 7;
-
-    public static final double kP = 1;
-    public static final double kI = 0;
-    public static final double kD = 0;
-
-    // These are fake gains; in actuality these must be determined individually for each robot
-    public static final double kSVolts = 1;
-    public static final double kGVolts = 1;
-    public static final double kVVoltSecondPerRad = 0.5;
-    public static final double kAVoltSecondSquaredPerRad = 0.1;
     
-    public static final double kMaxVelocityRadPerSecond = 0.3;            //[rad/s]
-    public static final double kMaxAccelerationRadPerSecSquared = 0.1;   //[rad/s*2]
-
     public static final int kEncoderPPR = 1;
     public static final int ArmGearRatio = 100;
 
@@ -126,10 +136,27 @@ public final class Constants {
     public static final double wheelDiameter = 0.1; //[m]
     public static final double kEncoderDistancePerPulse = wheelDiameter * Math.PI / (double)(kEncoderPPR*ArmCatchGearRatio); //[m]
 
-    // measured from the horizontal in radian
-    public static final double ArmFarPose = 0.0;      //[m]
-    public static final double ArmNearPose = 3.0;     //[m]
+    // 左右のモーターともに、近づくとPoseが増加、遠ざかるとPoseが減少、するようにする
+    public static final double ArmFarPose = 0.0;      //[m] 最大の位置
+    public static final double ArmNearPose = 3.0;     //[m]  最小の位置
+    public static final double ArmLeftMediumPose = 1.0;
     public static final double Tolerance = 0.02;      //[m]
+    public static final double AccelerationThreshold = -0.1;  // アームの物体衝突を検知する閾値
+
+    public enum State {
+      Disabled(0),
+      Reached(1),
+      UnReached(2);
+    
+      private final int code;
+      private State(int code) {
+        this.code = code;
+      }
+    
+      public int getCode() {
+        return code;
+      }
+    }
   }
 
   public static final class SliderConstants {
@@ -158,6 +185,13 @@ public final class Constants {
     public static final double SliderShortestInMeters = 0.0;  //[m] set the shortest as 0
     public static final double SliderLongestInMeters = 1.0;   //[m] maximum distance
     public static final double Tolerance = 0.02;               //[m]
+
+    public enum SliderOperateMode {
+      ExtendAll,
+      ShrinkAll,
+      CustomSetPoint,
+      Stay
+    }
   }
   public static final class AutoConstants {
     public static final double MaxSpeedMetersPerSecond = 0.5;
@@ -172,5 +206,18 @@ public final class Constants {
     public static final int ArmCatchRightID = 5;
     public static final int ArmCatchLeftID = 6;
     public static final int ArmRotationID = 7;
+  }
+
+  public enum Direction {
+    Left(0),
+    Right(1);
+
+    private final int code;
+    private Direction(int code){
+      this.code = code;
+    }
+    public int getCode() {
+      return code;
+    }
   }
 }
