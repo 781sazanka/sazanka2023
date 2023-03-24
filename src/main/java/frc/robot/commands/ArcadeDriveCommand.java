@@ -7,7 +7,7 @@ import frc.robot.RobotContainer;
 import frc.robot.subsystems.DriveTrain;
 
 /**
- *  @review finished(3/18 9:50)
+ * @review finished(3/18 9:50)
  * @test 3/17 going to test
  */
 public class ArcadeDriveCommand extends CommandBase {
@@ -26,8 +26,6 @@ public class ArcadeDriveCommand extends CommandBase {
 
   @Override
     public void execute() {
-      //TODO; this might be bad for this is overheading
-
       double speed = -RobotContainer.m_driverController.getLeftY();
       double turn = -RobotContainer.m_driverController.getRightX();
 

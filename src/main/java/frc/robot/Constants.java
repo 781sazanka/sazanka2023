@@ -146,6 +146,9 @@ public final class Constants {
     public static final double Tolerance = 0.02;      //[m]
     public static final double AccelerationThreshold = -0.1;  // アームの物体衝突を検知する閾値
 
+    public static final double mediumSetPoint = 2.0;  //[m]
+    public static final double defaultSetPoint = 0.4; //[m]
+    
     public enum State {
       Disabled(0),
       Reached(1),
@@ -159,6 +162,11 @@ public final class Constants {
       public int getCode() {
         return code;
       }
+    }
+
+    public enum ArmOperatorMode {
+      ReturnToMedium,
+      ReturnToDefault
     }
   }
 

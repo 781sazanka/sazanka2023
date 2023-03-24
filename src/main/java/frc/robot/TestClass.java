@@ -17,6 +17,7 @@ import frc.robot.subsystems.Slider;
 
 public class TestClass {
   static public XboxController controller = new XboxController(0);
+  
   public static class ArmCatchTest{
     private final CANSparkMax left_motor = new CANSparkMax(TestConstants.ArmCatchLeftID, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final CANSparkMax right_motor = new CANSparkMax(TestConstants.ArmCatchRightID, CANSparkMaxLowLevel.MotorType.kBrushless);

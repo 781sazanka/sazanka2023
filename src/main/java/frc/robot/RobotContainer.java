@@ -5,36 +5,24 @@
 package frc.robot;
 
 import frc.robot.Constants.*;
-import frc.robot.TestClass.LiftTest;
+import frc.robot.Constants.LiftConstants.LiftOperateMode;
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RepeatCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
-import java.lang.ModuleLayer.Controller;
-
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
-import com.pathplanner.lib.PathPlannerTrajectory;
 
 public class RobotContainer {
   // Shuffleboard
-  public static final ShuffleboardTab driveSettingsTab = Shuffleboard.getTab("Drive Settings");
   public static final ShuffleboardTab driveTab = Shuffleboard.getTab("DriveTrain");
   public static final ShuffleboardTab defaultCommandTab = Shuffleboard.getTab("defaulCommand State");
-  public static SendableChooser<String> drivePresetsChooser;  // choose who drive
   public static Field2d field = new Field2d();                // in case to view the current place of robot
 
   public static double driveSpeedSensitivity = OperatorConstants.driverSpeedSensitivityDefault;
@@ -50,16 +38,11 @@ public class RobotContainer {
   private static final DriveTrain driveTrain = new DriveTrain();
   private static final Lift lift = new Lift(true);
   private static final ArmRotation armRotation = new ArmRotation(true);
-  // private static final ArmCatch armCatchLeft = new ArmCatch(true, true);
-  // private static final ArmCatch armCatchRight = new ArmCatch(false, true);
-  // private static final Slider slider = new Slider(true);
-  // private static final ArmRotation testArm = new ArmRotation(true);
+  private static final ArmCatch armCatch = new ArmCatch(true);
 
   // commands
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
-  // private static final DefaultHoldCommand HOLD = 
-  //   new DefaultHoldCommand(liftArm, rotationArm,armCatchLeft,armCatchRight,slider);
 
   private static String pathname;
 
@@ -68,41 +51,41 @@ public class RobotContainer {
 
     // default commands settings
     driveTrain.setDefaultCommand(ARCADE_DRIVE);
-    // lift.setDefaultCommand(new LiftCommand(lift, LiftConstants.LiftOperateMode.Stay));
-    // rotationArm.setDefaultCommand(HOLD);
-    // armCatchLeft.setDefaultCommand(HOLD);
-    // armCatchRight.setDefaultCommand(HOLD);
-    // slider.setDefaultCommand(HOLD);
-
-    // driver settings
-    drivePresetsChooser = new SendableChooser<String>();
-    drivePresetsChooser.addOption("Koken", "koken");
-    drivePresetsChooser.addOption("Person_2", "person_2");
-    driveSettingsTab.add("Drive Presets", drivePresetsChooser)
-      .withWidget(BuiltInWidgets.kComboBoxChooser);
+    lift.setDefaultCommand(new LiftCommand(lift, LiftConstants.LiftOperateMode.Stay));
   }
 
   private void configureBindings() {
     m_driverController
-    .a().debounce(0.5)
+    .rightBumper().debounce(0.5)
     .onTrue(new InstantCommand(() -> {driveSpeedSensitivity++; driveTurnSensitivity+=0.5;}));
     m_driverController
-    .b().debounce(0.5)
+    .leftBumper().debounce(0.5)
     .onTrue(new InstantCommand(() -> {driveTurnSensitivity--; driveTurnSensitivity-=0.5;}));
 
-    // m_mechanicsController
-    // .x()
-    // .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Up));
-    // m_mechanicsController
-    // .y()
-    // .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Down));
     m_mechanicsController
     .a()
-    .onTrue(new ArmRotationCommand(armRotation, ArmRotationConstants.ArmForwardVertRads));
+    .whileTrue(Commands.run(() -> armRotation.setMotorVolt(0.1)));
     m_mechanicsController
     .b()
-    .onTrue(new ArmRotationCommand(armRotation, ArmRotationConstants.ArmBackwardVertRads));
-
+    .whileTrue(Commands.run(() -> armRotation.setMotorVolt(-0.1)));
+    m_mechanicsController
+    .rightTrigger()
+    .whileTrue(Commands.run(() -> armCatch.setMotorRightVolt(0.1)));
+    m_mechanicsController
+    .leftTrigger()
+    .whileTrue(Commands.run(() -> armCatch.setMotorLeftVolt(0.1)));
+    m_mechanicsController
+    .x()
+    .onTrue(new ArmCatchCommand(armCatch, ArmCatchConstants.ArmOperatorMode.ReturnToMedium));
+    m_mechanicsController
+    .y()
+    .onTrue(new ArmCatchCommand(armCatch, ArmCatchConstants.ArmOperatorMode.ReturnToDefault));
+    m_mechanicsController
+    .start()
+    .onTrue(new LiftCommand(lift, LiftOperateMode.Up));
+    m_mechanicsController
+    .back()
+    .onTrue(new LiftCommand(lift, LiftOperateMode.Down));
   }
 
   public Command getAutonomousCommand() {

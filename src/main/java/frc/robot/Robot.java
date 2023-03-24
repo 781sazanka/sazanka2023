@@ -20,7 +20,8 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private RobotContainer m_robotContainer;
   private boolean robotContainerFlag = false;
-  private SliderTest slider = new SliderTest();
+  // private SliderTest slider = new SliderTest();
+  private ArmCatchTest armCatch = new ArmCatchTest();
   // private SimpleMotorTest testMotor = new SimpleMotorTest();
   // private LiftTest testLift = new LiftTest();
   // private LiftCommandTest liftTest = new LiftCommandTest();
@@ -76,23 +77,14 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
-    // testMotor.init();
-    slider.init();
-    // armTest.init();
-    // testLift.init();
+    armCatch.init();
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    slider.move_motor();
-    slider.getLeft_encoder();
-    // testMotor.move_motor();
-    // testMotor.displayData();
-    // armTest.move_motor();
-    // // armTest.getEncoder();
-    // testLift.move_motor();
-    // testLift.getEncoder();
+    armCatch.move_motor();
+    armCatch.getRightEncoder();
   }
 
   @Override
