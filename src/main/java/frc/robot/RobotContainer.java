@@ -5,7 +5,6 @@
 package frc.robot;
 
 import frc.robot.Constants.*;
-import frc.robot.Constants.OperatorConstants.ModeCount;
 import frc.robot.TestClass.LiftTest;
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
@@ -24,6 +23,8 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
+import java.lang.ModuleLayer.Controller;
+
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
@@ -36,14 +37,14 @@ public class RobotContainer {
   public static SendableChooser<String> drivePresetsChooser;  // choose who drive
   public static Field2d field = new Field2d();                // in case to view the current place of robot
 
+  public static double driveSpeedSensitivity = OperatorConstants.driverSpeedSensitivityDefault;
+  public static double driveTurnSensitivity = OperatorConstants.driverTurnSensitivity;
+
   // controller
   public static final CommandXboxController m_driverController =
     new CommandXboxController(OperatorConstants.DriverControllerPort);
   public static final CommandXboxController m_mechanicsController =
     new CommandXboxController(OperatorConstants.MechanicsControllerPort);
-
-  private ModeCount operateMode;
-  private int modeCounter;
 
   // subsystems
   private static final DriveTrain driveTrain = new DriveTrain();
@@ -54,11 +55,6 @@ public class RobotContainer {
   // private static final Slider slider = new Slider(true);
   // private static final ArmRotation testArm = new ArmRotation(true);
 
-  Trigger IsModeRunningToTake = new Trigger(this.operateMode == ModeCount.RunningToTake);
-  Trigger IsModeCatching = new Trigger(armCatch::isRightReached);
-  Trigger IsModeLiftingExtending = new Trigger();
-  Trigger IsModePutting = new Trigger();
-
   // commands
   private static final ArcadeDriveCommand ARCADE_DRIVE = 
     new ArcadeDriveCommand(driveTrain);
@@ -68,13 +64,11 @@ public class RobotContainer {
   private static String pathname;
 
   public RobotContainer() {
-    operateMode = ModeCount.RunningToTake;
-    modeCounter = operateMode.getCode();
     configureBindings();
 
     // default commands settings
     driveTrain.setDefaultCommand(ARCADE_DRIVE);
-    lift.setDefaultCommand(new LiftCommand(lift, LiftConstants.LiftOperateMode.Stay));
+    // lift.setDefaultCommand(new LiftCommand(lift, LiftConstants.LiftOperateMode.Stay));
     // rotationArm.setDefaultCommand(HOLD);
     // armCatchLeft.setDefaultCommand(HOLD);
     // armCatchRight.setDefaultCommand(HOLD);
@@ -89,38 +83,19 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    // m_driverController
-    // .a()
-    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("A Button", "pressed"))
-    //   .andThen(new ArmRotationCommand(testArm, 1)));
-    // m_driverController
-    // .b()
-    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("B Button", "pressed"))
-    //   .andThen(new ArmRotationCommand(testArm,-1)));
-    // m_driverController
-    // .x()
-    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("X Button", "pressed"))
-    //   .andThen(new ArmRotationCommand(testArm, 0)));
-    // m_driverController
-    // .y()
-    // .onTrue(new InstantCommand(() -> SmartDashboard.putString("Y Button", "pressed"))
-    //   .andThen(Commands.run(() -> testArm.setMotorVolt(m_driverController.getLeftY()/3), testArm)));
-    m_mechanicsController
+    m_driverController
     .a().debounce(0.5)
-    .onTrue(new InstantCommand(() -> 
-      this.operateMode = ModeCount.getType(modeCounter++)));
-    m_mechanicsController
+    .onTrue(new InstantCommand(() -> {driveSpeedSensitivity++; driveTurnSensitivity+=0.5;}));
+    m_driverController
     .b().debounce(0.5)
-    .onTrue(new InstantCommand(() -> 
-      this.operateMode = ModeCount.getType(modeCounter--)));
-    
+    .onTrue(new InstantCommand(() -> {driveTurnSensitivity--; driveTurnSensitivity-=0.5;}));
 
-    m_mechanicsController
-    .x()
-    .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Up));
-    m_mechanicsController
-    .y()
-    .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Down));
+    // m_mechanicsController
+    // .x()
+    // .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Up));
+    // m_mechanicsController
+    // .y()
+    // .onTrue(new LiftCommand(lift, LiftConstants.LiftOperateMode.Down));
     m_mechanicsController
     .a()
     .onTrue(new ArmRotationCommand(armRotation, ArmRotationConstants.ArmForwardVertRads));
@@ -138,5 +113,12 @@ public class RobotContainer {
         new PathConstraints(AutoConstants.MaxSpeedMetersPerSecond,AutoConstants.MaxAccelerationMetersPerSecondSquared),
         false),
       true);
+  }
+
+  public static double getDriveSpeedSensitivity() {
+    return driveSpeedSensitivity;
+  }
+  public static double getDriveTurnSensitivity() {
+    return driveTurnSensitivity;
   }
 }

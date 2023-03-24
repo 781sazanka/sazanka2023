@@ -64,7 +64,7 @@ public class TestClass {
       motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
       motor.setSmartCurrentLimit(40);
       //TODO: rotate outside as the value is positive
-      motor.setInverted(true);
+      motor.setInverted(false);
       //TODO: encoder data will decrease as it rotates outside
       encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / ArmRotationConstants.ArmGearRatio);
       encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / ArmRotationConstants.ArmGearRatio);
@@ -92,9 +92,9 @@ public class TestClass {
     }
   }
   public static class SliderTest {
-    private final CANSparkMax left_motor = new CANSparkMax(6,
+    private final CANSparkMax left_motor = new CANSparkMax(SliderConstants.LeftMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
-    private final CANSparkMax right_motor = new CANSparkMax(5,
+    private final CANSparkMax right_motor = new CANSparkMax(SliderConstants.RightMotorID,
       CANSparkMaxLowLevel.MotorType.kBrushless);
     private RelativeEncoder left_encoder = left_motor.getEncoder();
     private RelativeEncoder right_encoder = right_motor.getEncoder();
@@ -133,9 +133,9 @@ public class TestClass {
     }
   }
   public static class SliderHandTest {
-    private final CANSparkMax left_motor = new CANSparkMax(6,
+    private final CANSparkMax left_motor = new CANSparkMax(SliderConstants.LeftMotorID,
     CANSparkMaxLowLevel.MotorType.kBrushless);
-    private final CANSparkMax right_motor = new CANSparkMax(5,
+    private final CANSparkMax right_motor = new CANSparkMax(SliderConstants.RightMotorID,
       CANSparkMaxLowLevel.MotorType.kBrushless);
     private RelativeEncoder encoder = left_motor.getEncoder();
     private RelativeEncoder right_encoder = right_motor.getEncoder();

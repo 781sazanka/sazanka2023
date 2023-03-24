@@ -19,32 +19,34 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int DriverControllerPort = 0;
     public static final int MechanicsControllerPort = 1;
+    public static final double driverSpeedSensitivityDefault = 1;
+    public static final double driverTurnSensitivity = 1;
 
-    public enum ModeCount {
-      RunningToTake(0),
-      Catching(1),
-      LiftingExtending(2),
-      Putting(3);
+    // public enum ModeCount {
+    //   RunningToTake(0),
+    //   Catching(1),
+    //   LiftingExtending(2),
+    //   Putting(3);
     
-      private final int code;
-      private ModeCount(int code) {
-        this.code = code;
-      }
+    //   private final int code;
+    //   private ModeCount(int code) {
+    //     this.code = code;
+    //   }
     
-      public int getCode() {
-        return code;
-      }
+    //   public int getCode() {
+    //     return code;
+    //   }
 
-      public static ModeCount getType(final int id) {
-        ModeCount[] types = ModeCount.values();
-        for (ModeCount type : types) {
-            if (type.getCode() == id) {
-                return type;
-            }
-        }
-        return null;
-      }
-    }
+    //   public static ModeCount getType(final int id) {
+    //     ModeCount[] types = ModeCount.values();
+    //     for (ModeCount type : types) {
+    //         if (type.getCode() == id) {
+    //             return type;
+    //         }
+    //     }
+    //     return null;
+    //   }
+    // }
   }
 
   public static final class DriveConstants {
@@ -110,6 +112,7 @@ public final class Constants {
     public static final double ArmInsideMaxRads = -2.348;
     public static final double ArmForwardVertRads = 1.548;   //[rad]
     public static final double ArmBackwardVertRads = -2.005;   //[rad]
+    public static final double TestRads = 0.5;
     public static final double Tolerance = 0.1;             //[rad]
   }
 

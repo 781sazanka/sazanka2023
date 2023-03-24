@@ -3,7 +3,6 @@ package frc.robot.commands;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.DriveConfig;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.DriveTrain;
 
@@ -28,12 +27,11 @@ public class ArcadeDriveCommand extends CommandBase {
   @Override
     public void execute() {
       //TODO; this might be bad for this is overheading
-      DriveConfig config = DriveConfig.getCurrent();
 
       double speed = -RobotContainer.m_driverController.getLeftY();
       double turn = -RobotContainer.m_driverController.getRightX();
 
-      driveTrain.arcadeDrive(speed / config.getSpeedSensitivity(), turn / config.getTurnSensitivity());
+      driveTrain.arcadeDrive(speed / RobotContainer.getDriveSpeedSensitivity(), turn / RobotContainer.getDriveTurnSensitivity());
     }
 
   @Override

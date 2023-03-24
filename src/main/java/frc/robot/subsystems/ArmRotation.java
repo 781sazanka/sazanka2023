@@ -28,7 +28,7 @@ public class ArmRotation extends SubsystemBase{
     motor.restoreFactoryDefaults();
     motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     motor.setSmartCurrentLimit(40);
-    motor.setInverted(true);
+    motor.setInverted(false);
     encoder.setPositionConversionFactor(Units.rotationsToRadians(1) / ArmGearRatio);
     encoder.setVelocityConversionFactor(Units.rotationsToRadians(1) / ArmGearRatio);
   }
